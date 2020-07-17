@@ -1,0 +1,163 @@
+/*
+ * Copyright (c) 2019 Practice Insight Pty Ltd. All Rights Reserved.
+ */
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        // https://github.com/GoogleContainerTools/jib/issues/1018
+        classpath('org.apache.httpcomponents:httpclient:4.5.12') {
+            force = true
+        }
+    }
+}
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'idea'
+    id 'maven-publish'
+    id "fr.brouillard.oss.gradle.jgitver" version "0.8.0"
+    id 'com.google.cloud.tools.jib' version '1.1.2'
+    id 'com.github.kt3k.coveralls' version '2.8.2'
+    id 'maven'
+    id "com.github.ben-manes.versions" version '0.21.0'
+    id 'net.ltgt.apt' version '0.21'
+    id 'net.ltgt.apt-idea' version "0.21"
+    id "io.wisetime.versionChecker" version "0.9.13"
+}
+
+apply from: "$rootDir/gradle/conf/checkstyle.gradle"
+apply from: "$rootDir/gradle/conf/jacoco.gradle"
+
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+group = 'io.wisetime'
+archivesBaseName = 'wisetime-sql-time-post-connector'
+mainClassName = 'io.wisetime.connector.sql_time_post.ConnectorLauncher'
+
+jib {
+    def targetArch = project.hasProperty('targetArch') ? project.targetArch : ''
+
+    if (targetArch == 'arm64v8') {
+        println 'building image with architecture: arm64v8'
+        from {
+            image = "arm64v8/openjdk:8-alpine"
+        }
+        to {
+            image = "wisetime/wisetime-sql-time-post-connector-arm64v8"
+        }
+    } else {
+        println 'building image with (default) architecture: amd64'
+        from {
+            image = "wisetime/wisetime-java8-connector"
+        }
+        to {
+            image = "wisetime/wisetime-sql-time-post-connector"
+        }
+    }
+}
+
+repositories {
+    maven {
+        // Google Maven Central mirror
+        url 'https://maven-central.storage-download.googleapis.com/repos/central/data'
+    }
+    maven {
+        // WiseTime artifacts
+        url 'https://s3.eu-central-1.amazonaws.com/artifacts.wisetime.com/mvn2/releases'
+        content {
+            includeGroup 'io.wisetime'
+        }
+    }
+}
+
+tasks.jib.dependsOn compileJava
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+    }
+}
+
+ext.jacocoLimits = [
+        'instruction': 54,
+        'line'       : 76,
+        'method'     : 71,
+        'class'      : 75
+]
+
+def taskRequestString = getGradle().getStartParameter().getTaskRequests().toString()
+if (taskRequestString.contains("dependencyUpdates")) {
+    // add exclusions for reporting on updates and vulnerabilities
+    apply from: "$rootDir/gradle/versionPluginConfig.gradle"
+}
+
+dependencies {
+    compile 'io.wisetime:wisetime-connector:2.3.4-1'
+
+    compile('com.google.inject:guice:4.2.2:no_aop') {
+        exclude group: 'com.google.guava', module: 'guava'
+    }
+    compile 'com.google.guava:guava:28.2-jre'
+
+    compile 'org.codejargon:fluentjdbc:1.8.3'
+    compile 'com.zaxxer:HikariCP:3.3.1'
+    compile 'com.microsoft.sqlserver:mssql-jdbc:6.4.0.jre8'
+
+    compile 'org.yaml:snakeyaml:1.24'
+
+    compileOnly("org.projectlombok:lombok:1.18.8")
+    annotationProcessor("org.projectlombok:lombok:1.18.8")
+
+    testCompile 'org.junit.jupiter:junit-jupiter:5.4.2'
+    testCompile 'org.mockito:mockito-core:2.27.0'
+    testCompile 'org.assertj:assertj-core:3.12.2'
+    testCompile 'org.flywaydb:flyway-core:5.1.1'
+    testCompile('com.github.javafaker:javafaker:0.17.2') {
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
+    testCompile 'io.wisetime:wisetime-test-support:2.3.14'
+    testCompile("org.projectlombok:lombok:1.18.8")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.8")
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        // "passed", "skipped", "failed"
+        events 'skipped', 'failed'
+    }
+}
+
+clean {
+    delete "${projectDir}/out"
+}
+
+jgitver {
+    autoIncrementPatch false
+}
+
+publishing {
+    repositories {
+        maven {
+            url 's3://artifacts.wisetime.com/mvn2/releases'
+            authentication {
+                awsIm(AwsImAuthentication)
+            }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId 'wisetime-sql-time-post-connector'
+            // version is set via plugin
+            from components.java
+        }
+    }
+}

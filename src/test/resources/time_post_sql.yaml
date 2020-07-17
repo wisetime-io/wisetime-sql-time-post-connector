@@ -1,0 +1,21 @@
+name: reinhold-cohn
+canQueryDb: >
+  SELECT 1 FROM CASES;
+createWorklog: >
+  INSERT INTO dbo.wt_post_time
+  (CASEID ,USERNAME, EMAIL, ACTIVITY_CODE, NARRATIVE, NARRATIVE_INTERNAL_NOTE, START_TIME, TOTAL_TIME_SECS, CHARGEABLE_TIME_SECS)
+  VALUES
+  (cast (:caseId as int), (SELECT Username FROM V_rcw_ListEmployee WHERE ID = :userId), (SELECT Email FROM V_rcw_ListEmployee WHERE ID = :userId),
+  cast (:activityCode as int), :narrative, :narrativeInternal, :startTime, :durationSecs, :chargeableTimeSecs);
+doesActivityCodeExist: >
+  select ACTIVITYCODE
+  FROM V_rcw_ListHoursActivity
+  WHERE ACTIVITYCODE = cast (:activityCode as int);
+findCaseIdByTagName: >
+  SELECT caseid
+  FROM cases c WHERE c.irn = :irn;
+findUserId: >
+  SELECT ID
+  FROM V_rcw_ListEmployee
+  WHERE username = :emailOrExternalId
+  OR email = :emailOrExternalId;
