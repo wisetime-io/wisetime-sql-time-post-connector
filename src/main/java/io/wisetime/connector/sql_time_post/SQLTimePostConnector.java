@@ -141,7 +141,6 @@ public class SQLTimePostConnector implements WiseTimeConnector {
       return PostResult.PERMANENT_FAILURE().withMessage("Time group has an invalid activity code");
     }
 
-    log.error(convertedTimeGroup.toString());
     final String narrative = narrativeFormatter.format(convertedTimeGroup);
     String narrativeInternal = null;
     if (narrativeInternalFormatter != null) {
