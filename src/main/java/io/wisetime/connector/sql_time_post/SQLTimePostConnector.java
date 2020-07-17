@@ -120,7 +120,9 @@ public class SQLTimePostConnector implements WiseTimeConnector {
       return PostResult.SUCCESS().withMessage("Time group has no tags. There is nothing to post.");
     }
 
-    final Optional<LocalDateTime> activityStartTime = startTime(timeGroup);
+    final TimeGroup convertedTimeGroup = convertToZone(timeGroup, getTimeZoneId());
+
+    final Optional<LocalDateTime> activityStartTime = startTime(convertedTimeGroup);
     if (!activityStartTime.isPresent()) {
       return PostResult.PERMANENT_FAILURE().withMessage("Cannot post time group with no time rows");
     }
@@ -139,10 +141,11 @@ public class SQLTimePostConnector implements WiseTimeConnector {
       return PostResult.PERMANENT_FAILURE().withMessage("Time group has an invalid activity code");
     }
 
-    final String narrative = narrativeFormatter.format(convertToZone(timeGroup, getTimeZoneId()));
+    log.error(convertedTimeGroup.toString());
+    final String narrative = narrativeFormatter.format(convertedTimeGroup);
     String narrativeInternal = null;
     if (narrativeInternalFormatter != null) {
-      narrativeInternal = narrativeInternalFormatter.format(convertToZone(timeGroup, getTimeZoneId()));
+      narrativeInternal = narrativeInternalFormatter.format(convertedTimeGroup);
     }
     final int workedTimeSeconds = Math.round(DurationCalculator.of(timeGroup)
         .disregardExperienceWeighting()
@@ -153,9 +156,9 @@ public class SQLTimePostConnector implements WiseTimeConnector {
         .calculate());
 
     String finalNarrativeInternal = narrativeInternal;
-    final Function<String, String> createWorklog = caseOrClientNumber -> {
+    final Function<String, String> createWorklog = caseNumber -> {
       final Worklog worklog = new Worklog()
-          .setCaseId(caseOrClientNumber)
+          .setCaseId(caseNumber)
           .setUserId(userId.get())
           .setActivityCode(activityCode.get())
           .setNarrative(narrative)
@@ -165,7 +168,7 @@ public class SQLTimePostConnector implements WiseTimeConnector {
           .setChargeableTimeSeconds(chargeableTimeSeconds);
 
       postTimeDao.createWorklog(worklog);
-      return caseOrClientNumber;
+      return caseNumber;
     };
 
     try {
