@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Practice Insight Pty Ltd. All Rights Reserved.
+ * Copyright (c) 2020 Practice Insight Pty Ltd. All Rights Reserved.
  */
 
 package io.wisetime.connector.sql_time_post.persistence;
@@ -8,23 +8,14 @@ import com.google.inject.Inject;
 
 import com.zaxxer.hikari.HikariDataSource;
 
-import io.wisetime.connector.sql_time_post.ConnectorLauncher;
 import io.wisetime.connector.sql_time_post.model.PostQueries;
-import io.wisetime.connector.config.RuntimeConfig;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.codejargon.fluentjdbc.api.FluentJdbc;
 import org.codejargon.fluentjdbc.api.FluentJdbcBuilder;
 import org.codejargon.fluentjdbc.api.mapper.Mappers;
 import org.codejargon.fluentjdbc.api.query.Query;
 
 import io.wisetime.connector.sql_time_post.model.Worklog;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 /**
  * DAO for posting time to the connected database. Queries are loaded from yaml file.
@@ -38,23 +29,10 @@ public class TimePostingDao {
   private final PostQueries queries;
 
   @Inject
-  public TimePostingDao(HikariDataSource dataSource) {
+  public TimePostingDao(HikariDataSource dataSource, PostQueries queries) {
     this.dataSource = dataSource;
     this.fluentJdbc = new FluentJdbcBuilder().connectionProvider(dataSource).build();
-
-    String sqlPath = RuntimeConfig.getString(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH)
-        .orElseThrow(() -> new IllegalStateException("TIME_POST_SQL_PATH must be set"));
-
-    try {
-      final Stream<String> lines = Files.lines(Paths.get(sqlPath));
-      final String contents = lines.collect(Collectors.joining("\n"));
-      lines.close();
-
-      final Yaml yaml = new Yaml(new Constructor(PostQueries.class));
-      queries = yaml.load(contents);
-    } catch (IOException e) {
-      throw  new IllegalStateException("Error loading time post queries");
-    }
+    this.queries = queries;
   }
 
   public void asTransaction(final Runnable runnable) {
@@ -67,9 +45,9 @@ public class TimePostingDao {
         .firstResult(Mappers.singleString());
   }
 
-  public Optional<String> findCaseIdByTagName(String tagName) {
-    return query().select(queries.getFindCaseIdByTagName())
-        .namedParam("irn", tagName)
+  public Optional<String> findMatterIdByTagName(String tagName) {
+    return query().select(queries.getFindMatterIdByTagName())
+        .namedParam("tagName", tagName)
         .firstResult(Mappers.singleString());
   }
 
@@ -83,7 +61,7 @@ public class TimePostingDao {
 
   public void createWorklog(Worklog worklog) {
     query().update(queries.getCreateWorklog())
-        .namedParam("caseId", worklog.getCaseId())
+        .namedParam("matterId", worklog.getMatterId())
         .namedParam("userId", worklog.getUserId())
         .namedParam("activityCode", worklog.getActivityCode())
         .namedParam("narrative", worklog.getNarrative())

@@ -13,10 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PostQueries {
 
-  private String name;
   private String canQueryDb;
   private String createWorklog;
   private String doesActivityCodeExist;
-  private String findCaseIdByTagName;
+  private String findMatterIdByTagName;
   private String findUserId;
 }

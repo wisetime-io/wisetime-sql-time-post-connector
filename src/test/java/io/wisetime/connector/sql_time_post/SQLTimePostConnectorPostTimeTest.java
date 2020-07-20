@@ -202,7 +202,7 @@ class SQLTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(any()))
         .thenReturn(true);
 
-    when(postTimeDaoMock.findCaseIdByTagName(anyString()))
+    when(postTimeDaoMock.findMatterIdByTagName(anyString()))
         .thenReturn(Optional.of("123"));
 
     final PostResult result = connector.postTime(mock(Request.class), timeGroup);
@@ -236,13 +236,13 @@ class SQLTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(any()))
         .thenReturn(true);
 
-    when(postTimeDaoMock.findCaseIdByTagName(existentCaseTag.getName()))
+    when(postTimeDaoMock.findMatterIdByTagName(existentCaseTag.getName()))
         .thenReturn(Optional.of("123"));
 
     assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
-    verify(postTimeDaoMock, times(1)).findCaseIdByTagName(anyString());
+    verify(postTimeDaoMock, times(1)).findMatterIdByTagName(anyString());
 
     ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
     verify(postTimeDaoMock, times(1)).createWorklog(worklogCaptor.capture());
@@ -251,7 +251,7 @@ class SQLTimePostConnectorPostTimeTest {
 
     assertThat(createdWorklogs)
         .hasSize(1);
-    assertThat(createdWorklogs.get(0).getCaseId())
+    assertThat(createdWorklogs.get(0).getMatterId())
         .isEqualTo("123");
   }
 
@@ -405,7 +405,7 @@ class SQLTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(any()))
         .thenReturn(true);
 
-    when(postTimeDaoMock.findCaseIdByTagName(any()))
+    when(postTimeDaoMock.findMatterIdByTagName(any()))
         .thenReturn(Optional.of("123"));
 
     assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
@@ -440,7 +440,7 @@ class SQLTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(any()))
         .thenReturn(true);
 
-    when(postTimeDaoMock.findCaseIdByTagName("tag1"))
+    when(postTimeDaoMock.findMatterIdByTagName("tag1"))
         .thenReturn(Optional.of("123"));
 
     assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
@@ -471,7 +471,7 @@ class SQLTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(any()))
         .thenReturn(true);
 
-    when(postTimeDaoMock.findCaseIdByTagName(any()))
+    when(postTimeDaoMock.findMatterIdByTagName(any()))
         .thenReturn(Optional.of("123"));
 
     assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
@@ -492,7 +492,7 @@ class SQLTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(any()))
         .thenReturn(true);
 
-    when(postTimeDaoMock.findCaseIdByTagName(any()))
+    when(postTimeDaoMock.findMatterIdByTagName(any()))
         .thenReturn(Optional.of("123"));
     final TimeGroup timeGroup = fakeGenerator.randomTimeGroup(DEFAULT_ACTIVITY_CODE)
         .totalDurationSecs(1000)
@@ -518,7 +518,7 @@ class SQLTimePostConnectorPostTimeTest {
         .totalDurationSecs(1000)
         .user(fakeGenerator.randomUser().experienceWeightingPercent(40))
         .tags(ImmutableList.of(tag));
-    when(postTimeDaoMock.findCaseIdByTagName(tag.getName()))
+    when(postTimeDaoMock.findMatterIdByTagName(tag.getName()))
         .thenReturn(Optional.empty());
     final PostResult result = connector.postTime(mock(Request.class), timeGroup);
 
@@ -546,7 +546,7 @@ class SQLTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findUserId(user.getExternalId()))
         .thenReturn(Optional.of("123"));
 
-    tags.forEach(tag -> when(postTimeDaoMock.findCaseIdByTagName(tag.getName()))
+    tags.forEach(tag -> when(postTimeDaoMock.findMatterIdByTagName(tag.getName()))
         .thenReturn(Optional.of("123")));
   }
 }

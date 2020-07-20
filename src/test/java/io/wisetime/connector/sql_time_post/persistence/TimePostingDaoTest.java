@@ -119,9 +119,9 @@ class TimePostingDaoTest {
   }
 
   @Test
-  void doesCaseExist() {
+  void doesMatterExist() {
     final String irn = createCase(123);
-    assertThat(postTimeDao.findCaseIdByTagName(irn))
+    assertThat(postTimeDao.findMatterIdByTagName(irn))
         .contains("123");
   }
 
@@ -151,7 +151,7 @@ class TimePostingDaoTest {
     final String internalNarrative = faker.gameOfThrones().quote();
 
     final Worklog worklog = new Worklog()
-        .setCaseId(caseId + "")
+        .setMatterId(caseId + "")
         .setUserId(userId + "")
         .setActivityCode(activityCode)
         .setNarrative(narrative)
@@ -166,7 +166,7 @@ class TimePostingDaoTest {
     final PendingTime pendingTime = getPendingTime().orElseThrow(() ->
         new RuntimeException("Pending time should exist"));
     assertThat(pendingTime.getCaseId())
-        .isEqualTo(worklog.getCaseId());
+        .isEqualTo(worklog.getMatterId());
     assertThat(pendingTime.getActivityCode())
         .isEqualTo(worklog.getActivityCode());
     assertThat(pendingTime.getEmail())

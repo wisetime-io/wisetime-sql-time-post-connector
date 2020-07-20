@@ -54,13 +54,15 @@ public class SQLTimePostConnector implements WiseTimeConnector {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private TemplateFormatter narrativeFormatter;
-  private TemplateFormatter narrativeInternalFormatter;
+  private Optional<TemplateFormatter> narrativeInternalFormatter;
 
   @Inject
   private TimePostingDao postTimeDao;
 
   @Override
   public void init(ConnectorModule connectorModule) {
+    // check if tag upsert path is configured. Default value doesn't make sense for this connector.
+    tagUpsertPath();
     String narrativePath = RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.NARRATIVE_PATH).orElseThrow(() ->
         new IllegalArgumentException("Narrative Template path must be configured"));
     Optional<String> narrativeInternalPath =
@@ -72,7 +74,7 @@ public class SQLTimePostConnector implements WiseTimeConnector {
             .withWindowsClr(true)
             .build()
     );
-    narrativeInternalPath.ifPresent(s -> narrativeInternalFormatter = new TemplateFormatter(
+    narrativeInternalFormatter = narrativeInternalPath.map(s -> new TemplateFormatter(
         TemplateFormatterConfig.builder()
             .withTemplatePath(s)
             .withWindowsClr(true)
@@ -93,11 +95,13 @@ public class SQLTimePostConnector implements WiseTimeConnector {
   @Override
   public void performTagUpdate() {
     // time posting only
+    log.info("TAG_SCAN should be set to DISABLED");
   }
 
   @Override
   public void performTagUpdateSlowLoop() {
     // time posting only
+    log.info("TAG_SCAN should be set to DISABLED");
   }
 
   @Override
@@ -142,10 +146,8 @@ public class SQLTimePostConnector implements WiseTimeConnector {
     }
 
     final String narrative = narrativeFormatter.format(convertedTimeGroup);
-    String narrativeInternal = null;
-    if (narrativeInternalFormatter != null) {
-      narrativeInternal = narrativeInternalFormatter.format(convertedTimeGroup);
-    }
+    Optional<String> narrativeInternal = narrativeInternalFormatter.map(f -> f.format(convertedTimeGroup));
+
     final int workedTimeSeconds = Math.round(DurationCalculator.of(timeGroup)
         .disregardExperienceWeighting()
         .useDurationFrom(DurationSource.SUM_TIME_ROWS)
@@ -154,36 +156,36 @@ public class SQLTimePostConnector implements WiseTimeConnector {
         .useExperienceWeighting()
         .calculate());
 
-    String finalNarrativeInternal = narrativeInternal;
-    final Function<String, String> createWorklog = caseNumber -> {
+    final Function<String, String> createWorklog = matterId -> {
       final Worklog worklog = new Worklog()
-          .setCaseId(caseNumber)
+          .setMatterId(matterId)
           .setUserId(userId.get())
           .setActivityCode(activityCode.get())
           .setNarrative(narrative)
-          .setNarrativeInternal(finalNarrativeInternal)
           .setStartTime(OffsetDateTime.of(activityStartTime.get(), ZoneOffset.UTC))
           .setDurationSeconds(workedTimeSeconds)
           .setChargeableTimeSeconds(chargeableTimeSeconds);
 
+      narrativeInternal.ifPresent(worklog::setNarrativeInternal);
+
       postTimeDao.createWorklog(worklog);
-      return caseNumber;
+      return matterId;
     };
 
     try {
       postTimeDao.asTransaction(() ->
           timeGroup.getTags()
               .stream()
-              .map(findCaseNumber)
+              .map(findMatterId)
               .filter(Optional::isPresent)
               .map(Optional::get)
               .map(createWorklog)
-              .forEach(caseNumber ->
-                  log.info("Posted time {} to case {}",
-                      timeGroup.getGroupId(), caseNumber)
+              .forEach(matterId ->
+                  log.info("Posted time {} to matter {}",
+                      timeGroup.getGroupId(), matterId)
               )
       );
-    } catch (CaseNotFoundException e) {
+    } catch (MatterNotFoundException e) {
       log.warn("Can't post time to the database: " + e.getMessage());
       return PostResult.PERMANENT_FAILURE()
           .withError(e)
@@ -201,17 +203,17 @@ public class SQLTimePostConnector implements WiseTimeConnector {
     return PostResult.SUCCESS();
   }
 
-  private final Function<Tag, Optional<String>> findCaseNumber = tag -> {
+  private final Function<Tag, Optional<String>> findMatterId = tag -> {
     if (!createdByConnector(tag)) {
       log.warn("The connector is not configured to handle this tag: {}. No time will be posted for this tag.",
           tag.getName());
       return Optional.empty();
     }
-    final Optional<String> tagId = postTimeDao.findCaseIdByTagName(tag.getName());
+    final Optional<String> tagId = postTimeDao.findMatterIdByTagName(tag.getName());
     if (tagId.isPresent()) {
       return tagId;
     }
-    throw new CaseNotFoundException("Can't find case for tag " + tag.getName());
+    throw new MatterNotFoundException("Can't find matter for tag " + tag.getName());
   };
 
   @VisibleForTesting
@@ -224,7 +226,7 @@ public class SQLTimePostConnector implements WiseTimeConnector {
   private String tagUpsertPath() {
     return RuntimeConfig
         .getString(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH)
-        .orElse("/Inprotech/");
+        .orElseThrow(() -> new IllegalArgumentException("TAG_UPSERT_PATH needs to be set"));
   }
 
   private Optional<String> getTimeGroupActivityCode(final TimeGroup timeGroup) {
@@ -316,8 +318,8 @@ public class SQLTimePostConnector implements WiseTimeConnector {
     return Long.parseLong(submittedDateConverted);
   }
 
-  private static class CaseNotFoundException extends RuntimeException {
-    CaseNotFoundException(String message) {
+  private static class MatterNotFoundException extends RuntimeException {
+    MatterNotFoundException(String message) {
       super(message);
     }
   }

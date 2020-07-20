@@ -38,8 +38,7 @@ services:
       # Set loglevel if other than default - INFO - required
       # LOGLEVEL: DEBUG
 
-      # Disable tag uploading by setting TAG_SCAN to DISABLED (tag upload must be done by, etg. using the SQL connector)
-      TAG_SCAN: DISABLED
+      # Required Parameter needs to be set to same value as associated tag sync connector
       TAG_UPSERT_PATH: /Inprotech/
 
       # uncomment the following - as well as the above docker ports: definition - if the connector
@@ -53,7 +52,7 @@ services:
       DB_USER: USERNAME
       DB_PASSWORD: PASSWORD
 
-      # Local cache for keeping track of cases and projects that have been synced
+      # Local cache for keeping track of matters that have been synced
       DATA_DIR: /usr/local/wisetime-connector/data/
 
       TIME_POST_SQL_PATH: /etc/wisetime-connector/time_post_sql.yaml

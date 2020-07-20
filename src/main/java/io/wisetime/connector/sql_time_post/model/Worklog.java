@@ -15,7 +15,7 @@ import java.time.OffsetDateTime;
 @Data
 @Accessors(chain = true)
 public class Worklog {
-  String caseId;
+  String matterId;
 
   String userId;
 

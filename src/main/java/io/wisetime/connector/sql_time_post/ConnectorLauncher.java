@@ -11,6 +11,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.wisetime.connector.ConnectorController;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.config.RuntimeConfigKey;
+import io.wisetime.connector.sql_time_post.model.PostQueries;
+import io.wisetime.connector.sql_time_post.util.PostQueriesProvider;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,6 +29,7 @@ public class ConnectorLauncher {
 
   public static ConnectorController buildConnectorController() {
     return ConnectorController.newBuilder()
+        .disableTagScan()
         .withWiseTimeConnector(Guice.createInjector(new DbModule()).getInstance(SQLTimePostConnector.class))
         .build();
   }
@@ -86,6 +89,8 @@ public class ConnectorLauncher {
       hikariConfig.setMaximumPoolSize(10);
 
       bind(HikariDataSource.class).toInstance(new HikariDataSource(hikariConfig));
+
+      bind(PostQueries.class).toProvider(PostQueriesProvider.class);
     }
 
   }
