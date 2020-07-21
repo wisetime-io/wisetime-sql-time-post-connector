@@ -12,7 +12,7 @@ import io.wisetime.connector.ConnectorController;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.config.RuntimeConfigKey;
 import io.wisetime.connector.sql_time_post.model.TimePostingQueries;
-import io.wisetime.connector.sql_time_post.util.PostQueriesProvider;
+import io.wisetime.connector.sql_time_post.util.TimePostingQueriesProvider;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -90,7 +90,7 @@ public class ConnectorLauncher {
 
       bind(HikariDataSource.class).toInstance(new HikariDataSource(hikariConfig));
 
-      bind(TimePostingQueries.class).toProvider(PostQueriesProvider.class);
+      bind(TimePostingQueries.class).toProvider(TimePostingQueriesProvider.class);
     }
 
   }

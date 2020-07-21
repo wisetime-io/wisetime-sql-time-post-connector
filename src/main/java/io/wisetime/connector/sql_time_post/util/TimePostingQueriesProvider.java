@@ -19,7 +19,7 @@ import org.yaml.snakeyaml.constructor.Constructor;
 /**
  * @author pascal
  */
-public class PostQueriesProvider implements Provider<TimePostingQueries> {
+public class TimePostingQueriesProvider implements Provider<TimePostingQueries> {
   @Override
   public TimePostingQueries get() {
     String sqlPath = RuntimeConfig.getString(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH)
