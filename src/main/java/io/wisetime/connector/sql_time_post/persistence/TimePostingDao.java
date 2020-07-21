@@ -8,7 +8,7 @@ import com.google.inject.Inject;
 
 import com.zaxxer.hikari.HikariDataSource;
 
-import io.wisetime.connector.sql_time_post.model.PostQueries;
+import io.wisetime.connector.sql_time_post.model.TimePostingQueries;
 import java.util.Optional;
 import org.codejargon.fluentjdbc.api.FluentJdbc;
 import org.codejargon.fluentjdbc.api.FluentJdbcBuilder;
@@ -26,10 +26,10 @@ public class TimePostingDao {
 
   private final FluentJdbc fluentJdbc;
   private final HikariDataSource dataSource;
-  private final PostQueries queries;
+  private final TimePostingQueries queries;
 
   @Inject
-  public TimePostingDao(HikariDataSource dataSource, PostQueries queries) {
+  public TimePostingDao(HikariDataSource dataSource, TimePostingQueries queries) {
     this.dataSource = dataSource;
     this.fluentJdbc = new FluentJdbcBuilder().connectionProvider(dataSource).build();
     this.queries = queries;
@@ -40,19 +40,19 @@ public class TimePostingDao {
   }
 
   public Optional<String> findUserId(String emailOrExternalId) {
-    return query().select(queries.getFindUserId())
+    return query().select(queries.getFindUserIdSql())
         .namedParam("emailOrExternalId", emailOrExternalId)
         .firstResult(Mappers.singleString());
   }
 
   public Optional<String> findMatterIdByTagName(String tagName) {
-    return query().select(queries.getFindMatterIdByTagName())
+    return query().select(queries.getFindMatterIdByTagNameSql())
         .namedParam("tagName", tagName)
         .firstResult(Mappers.singleString());
   }
 
   public boolean doesActivityCodeExist(String activityCode) {
-    return query().select(queries.getDoesActivityCodeExist())
+    return query().select(queries.getDoesActivityCodeExistSql())
         .namedParam("activityCode", activityCode)
         .maxRows(1L)
         .firstResult(rs -> rs)
@@ -60,7 +60,7 @@ public class TimePostingDao {
   }
 
   public void createWorklog(Worklog worklog) {
-    query().update(queries.getCreateWorklog())
+    query().update(queries.getCreateWorklogSql())
         .namedParam("matterId", worklog.getMatterId())
         .namedParam("userId", worklog.getUserId())
         .namedParam("activityCode", worklog.getActivityCode())
@@ -74,7 +74,7 @@ public class TimePostingDao {
 
   public boolean canQueryDb() {
     try {
-      query().select(queries.getCanQueryDb()).firstResult(Mappers.singleString());
+      query().select(queries.getCanQueryDbSql()).firstResult(Mappers.singleString());
       return true;
     } catch (Exception ex) {
       return false;

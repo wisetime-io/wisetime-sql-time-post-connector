@@ -11,11 +11,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostQueries {
+public class TimePostingQueries {
 
-  private String canQueryDb;
-  private String createWorklog;
-  private String doesActivityCodeExist;
-  private String findMatterIdByTagName;
-  private String findUserId;
+  private String canQueryDbSql;
+  private String createWorklogSql;
+  private String doesActivityCodeExistSql;
+  private String findMatterIdByTagNameSql;
+  private String findUserIdSql;
 }

@@ -11,7 +11,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.wisetime.connector.ConnectorController;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.config.RuntimeConfigKey;
-import io.wisetime.connector.sql_time_post.model.PostQueries;
+import io.wisetime.connector.sql_time_post.model.TimePostingQueries;
 import io.wisetime.connector.sql_time_post.util.PostQueriesProvider;
 import java.util.concurrent.TimeUnit;
 
@@ -83,14 +83,14 @@ public class ConnectorLauncher {
 
       hikariConfig.setPassword(
           RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.DB_PASSWORD)
-              .orElseThrow(() -> new RuntimeException("Missing required JDBC_PASSWORD configuration"))
+              .orElseThrow(() -> new RuntimeException("Missing required DB_PASSWORD configuration"))
       );
       hikariConfig.setConnectionTimeout(TimeUnit.MINUTES.toMillis(1));
       hikariConfig.setMaximumPoolSize(10);
 
       bind(HikariDataSource.class).toInstance(new HikariDataSource(hikariConfig));
 
-      bind(PostQueries.class).toProvider(PostQueriesProvider.class);
+      bind(TimePostingQueries.class).toProvider(PostQueriesProvider.class);
     }
 
   }
