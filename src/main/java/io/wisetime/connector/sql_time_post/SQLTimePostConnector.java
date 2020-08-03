@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.codejargon.fluentjdbc.api.FluentJdbcSqlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
@@ -172,6 +173,10 @@ public class SQLTimePostConnector implements WiseTimeConnector {
       return matterId;
     };
 
+    return doPostTime(timeGroup, createWorklog);
+  }
+
+  private PostResult doPostTime(TimeGroup timeGroup, Function<String, String> createWorklog) {
     try {
       postTimeDao.asTransaction(() ->
           timeGroup.getTags()
@@ -195,10 +200,17 @@ public class SQLTimePostConnector implements WiseTimeConnector {
       return PostResult.PERMANENT_FAILURE()
           .withError(ex)
           .withMessage(ex.getMessage());
+    } catch (FluentJdbcSqlException e) {
+      // get underlying SQL error if it exists (which should always be the case for FluentJdbcSqlException
+      // because it warps the underlying exception thrown by the jdbc API)
+      String message = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+      return PostResult.PERMANENT_FAILURE()
+          .withError(e)
+          .withMessage("A database error has occurred - please contact your administrator: " + message);
     } catch (RuntimeException e) {
       return PostResult.TRANSIENT_FAILURE()
           .withError(e)
-          .withMessage("There was an error posting time to the database");
+          .withMessage("There was an unexpected error while posting time.");
     }
     return PostResult.SUCCESS();
   }
