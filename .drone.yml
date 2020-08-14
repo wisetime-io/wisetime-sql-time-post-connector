@@ -42,7 +42,7 @@ steps:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       MSSQL_TEST_HOST: mssql-service
     commands:
-      - ./gradlew test check
+      - ./gradlew test depCheck check
 
   - name: save-cache
     image: drillster/drone-volume-cache
