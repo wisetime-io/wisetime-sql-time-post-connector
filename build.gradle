@@ -107,6 +107,8 @@ dependencies {
     compile 'org.codejargon:fluentjdbc:1.8.3'
     compile 'com.zaxxer:HikariCP:3.3.1'
     compile 'com.microsoft.sqlserver:mssql-jdbc:6.4.0.jre8'
+    compile 'mysql:mysql-connector-java:8.0.21'
+    compile 'org.postgresql:postgresql:42.2.16'
 
     compile 'org.yaml:snakeyaml:1.24'
 
@@ -120,7 +122,7 @@ dependencies {
     testCompile('com.github.javafaker:javafaker:0.17.2') {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
-    testCompile 'io.wisetime:wisetime-test-support:2.3.14'
+    testCompile 'io.wisetime:wisetime-test-support:2.4.1-1'
     testCompile("org.projectlombok:lombok:1.18.8")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.8")
 }

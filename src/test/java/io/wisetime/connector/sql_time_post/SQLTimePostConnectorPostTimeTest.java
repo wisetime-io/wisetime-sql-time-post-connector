@@ -56,11 +56,11 @@ class SQLTimePostConnectorPostTimeTest {
 
   private static final String DEFAULT_ACTIVITY_CODE = "123456";
 
-  private static TimePostingDao postTimeDaoMock = mock(TimePostingDao.class);
   private static ApiClient apiClientMock = mock(ApiClient.class);
+  private static TimePostingDao postTimeDaoMock = mock(TimePostingDao.class);
 
   private static SQLTimePostConnector connector;
-  private static FakeTimeGroupGenerator fakeGenerator = new FakeTimeGroupGenerator();
+  private final FakeTimeGroupGenerator fakeGenerator = new FakeTimeGroupGenerator();
 
   @BeforeAll
   static void setUp() {
@@ -72,9 +72,8 @@ class SQLTimePostConnectorPostTimeTest {
         .getResource("timegroup-narrative-internal-template.ftl").getPath();
     RuntimeConfig.setProperty(SQLPostTimeConnectorConfigKey.NARRATIVE_INTERNAL_PATH, fileLocationInternal);
 
-    Injector injector = Guice.createInjector(binder -> {
-      binder.bind(TimePostingDao.class).toProvider(() -> postTimeDaoMock);
-    });
+    Injector injector = Guice.createInjector(
+        binder -> binder.bind(TimePostingDao.class).toProvider(() -> postTimeDaoMock));
     connector = injector.getInstance(SQLTimePostConnector.class);
 
     connector.init(new ConnectorModule(apiClientMock, mock(ConnectorStore.class), 5));

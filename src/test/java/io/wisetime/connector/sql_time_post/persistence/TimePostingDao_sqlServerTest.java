@@ -13,10 +13,8 @@ import com.google.inject.Provider;
 import com.github.javafaker.Faker;
 import com.zaxxer.hikari.HikariDataSource;
 
+import io.wisetime.connector.sql_time_post.persistence.PendingTimeHelper.PendingTime;
 import java.time.LocalDateTime;
-import java.util.Optional;
-import lombok.Data;
-import lombok.experimental.Accessors;
 import org.codejargon.fluentjdbc.api.FluentJdbc;
 import org.codejargon.fluentjdbc.api.FluentJdbcBuilder;
 import org.codejargon.fluentjdbc.api.query.Query;
@@ -48,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author pascal
  */
-class TimePostingDaoTest {
+class TimePostingDao_sqlServerTest {
 
   private static JdbcDatabaseContainer sqlServerContainer;
   private static FakeTimeGroupGenerator fakeTimeGroupGenerator = new FakeTimeGroupGenerator();
@@ -57,10 +55,14 @@ class TimePostingDaoTest {
   private static TimePostingDao postTimeDao;
   private static FluentJdbc fluentJdbc;
 
+  private static PendingTimeHelper pendingTimeHelper;
+
   @BeforeAll
   static void setUp() throws InterruptedException {
-    final String fileLocation = TimePostingDaoTest.class.getClassLoader()
-        .getResource("time_post_sql.yaml").getPath();
+    final String fileLocation = TimePostingDao_sqlServerTest.class
+        .getClassLoader()
+        .getResource("time_post/sqlserver_time_post_sql.yaml")
+        .getPath();
     RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH, fileLocation);
     sqlServerContainer = getContainer();
     RuntimeConfig.setProperty(JDBC_URL, sqlServerContainer.getJdbcUrl());
@@ -75,6 +77,7 @@ class TimePostingDaoTest {
 
     postTimeDao = injector.getInstance(TimePostingDao.class);
     fluentJdbc = new FluentJdbcBuilder().connectionProvider(injector.getInstance(HikariDataSource.class)).build();
+    pendingTimeHelper = new PendingTimeHelper(fluentJdbc);
 
     // Apply DB schema to test db
     injector.getInstance(Flyway.class).migrate();
@@ -163,26 +166,9 @@ class TimePostingDaoTest {
 
     postTimeDao.createWorklog(worklog);
 
-    final PendingTime pendingTime = getPendingTime().orElseThrow(() ->
-        new RuntimeException("Pending time should exist"));
-    assertThat(pendingTime.getCaseId())
-        .isEqualTo(worklog.getMatterId());
-    assertThat(pendingTime.getActivityCode())
-        .isEqualTo(worklog.getActivityCode());
-    assertThat(pendingTime.getEmail())
-        .isEqualTo(user.getEmail());
-    assertThat(pendingTime.getUsername())
-        .isEqualTo(user.getExternalId());
-    assertThat(pendingTime.getStartTime())
-        .isEqualToIgnoringSeconds(worklog.getStartTime());
-    assertThat(pendingTime.getDurationSeconds())
-        .isEqualTo(worklog.getDurationSeconds());
-    assertThat(pendingTime.getChargeableTimeSeconds())
-        .isEqualTo(worklog.getChargeableTimeSeconds());
-    assertThat(pendingTime.getNarrativeInternal())
-        .isEqualTo(worklog.getNarrativeInternal());
-    assertThat(pendingTime.getNarrative())
-        .isEqualTo(worklog.getNarrative());
+    final PendingTime pendingTime = pendingTimeHelper.getPendingTime()
+        .orElseThrow(() -> new RuntimeException("Pending time should exist"));
+    pendingTimeHelper.assertPendingTime(pendingTime, worklog, user);
   }
 
   private String createCase(final int caseId) {
@@ -231,43 +217,6 @@ class TimePostingDaoTest {
         .run();
   }
 
-  private Optional<PendingTime> getPendingTime() {
-    return fluentJdbc.query().select("select * from wt_post_time")
-        .firstResult(rs -> new PendingTime()
-              .setCaseId(rs.getString("CASEID"))
-              .setUsername(rs.getString("USERNAME"))
-              .setEmail(rs.getString("EMAIL"))
-              .setActivityCode(rs.getString("ACTIVITY_CODE"))
-              .setNarrative(rs.getString("NARRATIVE"))
-              .setNarrativeInternal(rs.getString("NARRATIVE_INTERNAL_NOTE"))
-              .setStartTime(OffsetDateTime.ofInstant(rs.getTimestamp("START_TIME").toInstant(),
-                  ZoneOffset.UTC))
-              .setDurationSeconds(rs.getInt("TOTAL_TIME_SECS"))
-              .setChargeableTimeSeconds(rs.getInt("CHARGEABLE_TIME_SECS")));
-  }
-
-  @Data
-  @Accessors(chain = true)
-  private static class PendingTime {
-    String caseId;
-
-    String username;
-
-    String email;
-
-    String activityCode;
-
-    String narrative;
-
-    String narrativeInternal;
-
-    OffsetDateTime startTime;
-
-    int durationSeconds;
-
-    int chargeableTimeSeconds;
-  }
-
   /**
    * Initializes database schema for unit tests
    */
@@ -289,7 +238,7 @@ class TimePostingDaoTest {
         flyway.setDataSource(dataSourceProvider.get());
         flyway.setBaselineVersion(MigrationVersion.fromVersion("0"));
         flyway.setBaselineOnMigrate(true);
-        flyway.setLocations("sql/");
+        flyway.setLocations("db_schema/sqlserver/");
         return flyway;
       }
     }
