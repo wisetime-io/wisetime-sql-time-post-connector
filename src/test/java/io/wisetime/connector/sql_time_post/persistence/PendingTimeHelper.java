@@ -18,7 +18,7 @@ import org.codejargon.fluentjdbc.api.FluentJdbc;
 /**
  * @author dchandler
  */
-public class PendingTimeHelper {
+class PendingTimeHelper {
 
   private FluentJdbc fluentJdbc;
 
