@@ -22,7 +22,7 @@ class PendingTimeHelper {
 
   private FluentJdbc fluentJdbc;
 
-  public PendingTimeHelper(FluentJdbc fluentJdbc) {
+  PendingTimeHelper(FluentJdbc fluentJdbc) {
     this.fluentJdbc = fluentJdbc;
   }
 
