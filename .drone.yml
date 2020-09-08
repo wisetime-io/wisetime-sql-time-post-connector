@@ -42,7 +42,7 @@ steps:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       MSSQL_TEST_HOST: mssql-service
       MYSQL_TEST_HOST: mysql-service
-      POSGRES_TEST_HOST: postgres-service
+      POSTGRES_TEST_HOST: postgres-service
     commands:
       - ./gradlew test depCheck check
 
