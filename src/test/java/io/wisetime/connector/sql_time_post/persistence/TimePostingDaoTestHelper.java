@@ -7,29 +7,27 @@ import com.google.common.base.Preconditions;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import com.zaxxer.hikari.HikariDataSource;
-import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
 import io.wisetime.connector.sql_time_post.model.Worklog;
 import io.wisetime.connector.sql_time_post.persistence.PendingTimeTestHelper.PendingTime;
 import io.wisetime.generated.connect.User;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.codejargon.fluentjdbc.api.FluentJdbc;
 import org.codejargon.fluentjdbc.api.FluentJdbcBuilder;
+import org.codejargon.fluentjdbc.api.mapper.Mappers;
 import org.codejargon.fluentjdbc.api.query.Query;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
-
 
 /**
  * @author dchandler
  */
 @Singleton
 class TimePostingDaoTestHelper {
-
-  private final FakeTimeGroupGenerator fakeTimeGroupGenerator = new FakeTimeGroupGenerator();
 
   private final Faker faker = new Faker();
 
@@ -48,15 +46,14 @@ class TimePostingDaoTestHelper {
         .isTrue();
   }
 
-  void doesUserExist(int userId) {
-    final User user = fakeTimeGroupGenerator.randomUser();
+  void doesUserExist(int userId, User user) {
     assertThat(postTimeDao.findUserId(user.getEmail()))
         .as("User not in DB")
         .isEmpty();
 
     // Add user in DB
-    createUserIdentity(userId, user.getEmail(), user.getExternalId());
-    assertThat(postTimeDao.findUserId(user.getEmail()))
+    createUserIdentity(userId, user.getExternalId());
+    assertThat(postTimeDao.findUserId(user.getExternalId()))
         .as("User is in DB")
         .contains(userId + "");
 
@@ -82,13 +79,9 @@ class TimePostingDaoTestHelper {
     cleanupDbRows();
   }
 
-  void createWorklog() {
+  void createWorklog(int userId, User user) {
     int caseId = (int) faker.number().randomNumber();
     createCase(caseId);
-
-    final User user = fakeTimeGroupGenerator.randomUser();
-    final int userId = (int) faker.number().randomNumber();
-    createUserIdentity(userId, user.getEmail(), user.getExternalId());
 
     final int activityCode = faker.number().numberBetween(1000, 5000);
     createActivityCode(activityCode, faker.gameOfThrones().house());
@@ -115,12 +108,39 @@ class TimePostingDaoTestHelper {
     pendingTimeTestHelper.assertPendingTime(pendingTime, worklog, user);
   }
 
+  void createUserIdentity(int userId, String loginId) {
+    fluentJdbc.query().update("INSERT INTO USERIDENTITY (nameno, loginid) VALUES (:userId, :loginId)")
+        .namedParam("userId", userId)
+        .namedParam("loginId", loginId)
+        .run();
+  }
+
+  void createEmployee(int employeeId, String email, String loginId) {
+    long mainEmailId = faker.number().randomNumber();
+    fluentJdbc.query().update("INSERT INTO TELECOMMUNICATION (TELECODE, TELECOMNUMBER, TELECOMTYPE) " +
+        "VALUES (:telecode, :email, 1903)")
+        .namedParam("telecode", mainEmailId)
+        .namedParam("email", email)
+        .run();
+    fluentJdbc.query().update("INSERT INTO NAME (NAMENO, NAME, MAINEMAIL) VALUES (:nameNo, :name, :mainemail)")
+        .namedParam("nameNo", employeeId)
+        .namedParam("name", faker.gameOfThrones().character())
+        .namedParam("mainemail", mainEmailId)
+        .run();
+
+    createUserIdentity(employeeId, loginId);
+
+    fluentJdbc.query().update("INSERT INTO EMPLOYEE (EMPLOYEENO) VALUES (:employeeId)")
+        .namedParam("employeeId", employeeId)
+        .run();
+  }
+
   private String createCase(final int caseId) {
     final String irn = faker.numerify("C######");
     final String title = faker.company().name();
 
     final String insertCaseSql =
-        "INSERT INTO cases(case_id, irn, title, case_type, property_type, country_code) "
+        "INSERT INTO CASES(caseid, irn, title, casetype, propertytype, countrycode) "
             + "VALUES (:caseId, :irn, :title, :caseType, :propertyType, :countryCode)";
 
     fluentJdbc.query().update(insertCaseSql)
@@ -135,16 +155,9 @@ class TimePostingDaoTestHelper {
     return irn;
   }
 
-  private void createUserIdentity(int userId, String email, String username) {
-    fluentJdbc.query().update("INSERT INTO user_identity (user_id, email, username) VALUES (:userId, :email, :username)")
-        .namedParam("userId", userId)
-        .namedParam("email", email)
-        .namedParam("username", username)
-        .run();
-  }
-
   private void createActivityCode(int activityCode, String activityName) {
-    fluentJdbc.query().update("INSERT INTO activity_codes VALUES (:code, :name)")
+    fluentJdbc.query().update(
+        "INSERT INTO TACTIVITYCODES (activitycode, activityname, activitytype, activityla) VALUES (:code, :name, 3, 1)")
         .namedParam("code", activityCode)
         .namedParam("name", activityName)
         .run();
@@ -152,14 +165,27 @@ class TimePostingDaoTestHelper {
 
   private void cleanupDbRows() {
     final Query query = fluentJdbc.query();
-    query.update("DELETE FROM cases")
-        .run();
-    query.update("DELETE FROM user_identity")
-        .run();
-    query.update("DELETE FROM activity_codes")
-        .run();
-    query.update("DELETE FROM wt_post_time")
-        .run();
+    tableExists("CASES")
+        .ifPresent(value -> query.update("DELETE FROM CASES").run());
+    tableExists("EMPLOYEE")
+        .ifPresent(value -> query.update("DELETE FROM EMPLOYEE").run());
+    tableExists("USERIDENTITY")
+        .ifPresent(value -> query.update("DELETE FROM USERIDENTITY").run());
+    tableExists("NAME")
+        .ifPresent(value -> query.update("DELETE FROM NAME").run());
+    tableExists("TELECOMMUNICATION")
+        .ifPresent(value -> query.update("DELETE FROM TELECOMMUNICATION").run());
+    tableExists("wt_post_time")
+        .ifPresent(value -> query.update("DELETE FROM wt_post_time").run());
+    tableExists("TACTIVITYCODES")
+        .ifPresent(value -> query.update("DELETE FROM TACTIVITYCODES").run());
+  }
+
+  private Optional<Boolean> tableExists(String tableName) {
+    return fluentJdbc.query()
+        .select("select 1 from information_schema.TABLES where TABLE_NAME = :tableName")
+        .namedParam("tableName", tableName)
+        .firstResult(Mappers.singleBoolean());
   }
 
   /**

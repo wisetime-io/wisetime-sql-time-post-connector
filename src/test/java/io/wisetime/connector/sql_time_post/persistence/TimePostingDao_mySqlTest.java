@@ -9,13 +9,16 @@ import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeC
 import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.JDBC_URL;
 import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH;
 
+import com.github.javafaker.Faker;
 import com.google.common.base.Preconditions;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.sql_time_post.ConnectorLauncher;
+import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
 import io.wisetime.connector.sql_time_post.persistence.TimePostingDaoTestHelper.FluentJdbcTestDbModule;
 import io.wisetime.connector.sql_time_post.persistence.TimePostingDaoTestHelper.FlywayTestDbModule;
+import io.wisetime.generated.connect.User;
 import io.wisetime.test_docker.ContainerRuntimeSpec;
 import io.wisetime.test_docker.DockerLauncher;
 import io.wisetime.test_docker.containers.MySqlServer;
@@ -29,7 +32,13 @@ import org.junit.jupiter.api.Test;
  */
 class TimePostingDao_mySqlTest {
 
+  private static final String USER_EMAIL_DOMAIN = "@mysql.test.com";
+
   private static TimePostingDaoTestHelper timePostingDaoTestHelper;
+
+  private final FakeTimeGroupGenerator fakeTimeGroupGenerator = new FakeTimeGroupGenerator();
+
+  private final Faker faker = new Faker();
 
   @BeforeAll
   static void setUp() {
@@ -41,7 +50,6 @@ class TimePostingDao_mySqlTest {
         .getClassLoader()
         .getResource("db_schema/mysql/time_post_sql.yaml"))
         .getPath();
-
     RuntimeConfig.setProperty(TIME_POST_SQL_PATH, fileLocation);
     RuntimeConfig.setProperty(JDBC_URL, jdbcUrl);
     RuntimeConfig.setProperty(DB_USER, mySqlServer.getUsername());
@@ -71,12 +79,16 @@ class TimePostingDao_mySqlTest {
 
   @Test
   void doesUserExist() {
-    timePostingDaoTestHelper.doesUserExist(123);
+    final int userId = faker.number().numberBetween(1000, 5000);
+    final User user = fakeTimeGroupGenerator.randomUser();
+    user.setEmail(user.getExternalId() + USER_EMAIL_DOMAIN);
+    timePostingDaoTestHelper.doesUserExist(userId, user);
   }
 
   @Test
   void doesMatterExist() {
-    timePostingDaoTestHelper.doesMatterExist(100);
+    final int caseId = faker.number().numberBetween(1000, 5000);
+    timePostingDaoTestHelper.doesMatterExist(caseId);
   }
 
   @Test
@@ -86,6 +98,11 @@ class TimePostingDao_mySqlTest {
 
   @Test
   void createWorklog() {
-    timePostingDaoTestHelper.createWorklog();
+    final User user = fakeTimeGroupGenerator.randomUser();
+    user.setEmail(user.getExternalId() + USER_EMAIL_DOMAIN);
+
+    final int userId = faker.number().numberBetween(1000, 5000);
+    timePostingDaoTestHelper.createUserIdentity(userId, user.getExternalId());
+    timePostingDaoTestHelper.createWorklog(userId, user);
   }
 }

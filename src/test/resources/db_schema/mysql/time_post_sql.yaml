@@ -1,17 +1,17 @@
 canQueryDbSql: >
-  SELECT 1 FROM cases;
+  SELECT 1 FROM CASES;
 createWorklogSql: >
   INSERT INTO wt_post_time (caseid, username, email, activity_code, narrative, narrative_internal_note, start_time, total_time_secs, chargeable_time_secs)
-  VALUES (CAST(:matterId as SIGNED), (SELECT username FROM user_identity WHERE user_id = :userId), (SELECT email FROM user_identity WHERE user_id = :userId),
+  VALUES (CAST(:matterId as SIGNED), (SELECT loginid FROM USERIDENTITY WHERE nameno = :userId), (SELECT CONCAT(loginid, '@mysql.test.com') FROM USERIDENTITY WHERE nameno = :userId),
     CAST(:activityCode as SIGNED), :narrative, :narrativeInternal, :startTime, :durationSecs, :chargeableTimeSecs);
 doesActivityCodeExistSql: >
-  SELECT activity_code
-  FROM activity_codes
-  WHERE activity_code = :activityCode;
+  SELECT activitycode
+  FROM TACTIVITYCODES
+  WHERE activitycode = :activityCode;
 findMatterIdByTagNameSql: >
-  SELECT case_id
-  FROM cases WHERE irn = :tagName;
+  SELECT caseid
+  FROM CASES WHERE irn = :tagName;
 findUserIdSql: >
-  SELECT user_id AS ID
-  FROM user_identity
-  WHERE username = :emailOrExternalId OR email = :emailOrExternalId;
+  SELECT nameno AS ID
+  FROM USERIDENTITY
+  WHERE loginid = :emailOrExternalId

@@ -2,16 +2,16 @@ canQueryDbSql: >
   SELECT 1 FROM cases;
 createWorklogSql: >
   INSERT INTO wt_post_time (caseid, username, email, activity_code, narrative, narrative_internal_note, start_time, total_time_secs, chargeable_time_secs)
-    VALUES (:matterId::int, (SELECT username FROM user_identity WHERE user_id = :userId::int), (SELECT email FROM user_identity WHERE user_id = :userId::int),
+    VALUES (:matterId::int, (SELECT loginid FROM USERIDENTITY WHERE nameno = :userId::int), (SELECT loginid || '@postgres.test.com' FROM USERIDENTITY WHERE nameno = :userId::int),
       :activityCode::int, :narrative, :narrativeInternal, :startTime, :durationSecs::int, :chargeableTimeSecs::int);
 doesActivityCodeExistSql: >
-  SELECT activity_code
-  FROM activity_codes
-  WHERE activity_code = :activityCode::int;
+  SELECT ACTIVITYCODE
+  FROM TACTIVITYCODES
+  WHERE ACTIVITYCODE = :activityCode::int;
 findMatterIdByTagNameSql: >
-  SELECT case_id
-  FROM cases WHERE irn = :tagName;
+  SELECT CASEID
+  FROM CASES WHERE irn = :tagName;
 findUserIdSql: >
-  SELECT user_id AS ID
-  FROM user_identity
-  WHERE username = :emailOrExternalId OR email = :emailOrExternalId;
+  SELECT NAMENO AS ID
+  FROM USERIDENTITY
+  WHERE loginid = :emailOrExternalId

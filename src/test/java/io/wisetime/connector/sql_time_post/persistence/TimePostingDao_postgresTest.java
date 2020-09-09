@@ -9,12 +9,15 @@ import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeC
 import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.JDBC_URL;
 import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH;
 
+import com.github.javafaker.Faker;
 import com.google.common.base.Preconditions;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.sql_time_post.ConnectorLauncher;
+import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
 import io.wisetime.connector.sql_time_post.persistence.TimePostingDaoTestHelper.FluentJdbcTestDbModule;
+import io.wisetime.generated.connect.User;
 import io.wisetime.test_docker.ContainerRuntimeSpec;
 import io.wisetime.test_docker.DockerLauncher;
 import io.wisetime.test_docker.containers.Postgres;
@@ -28,7 +31,13 @@ import org.junit.jupiter.api.Test;
  */
 class TimePostingDao_postgresTest {
 
+  private static final String USER_EMAIL_DOMAIN = "@postgres.test.com";
+
   private static TimePostingDaoTestHelper timePostingDaoTestHelper;
+
+  private final FakeTimeGroupGenerator fakeTimeGroupGenerator = new FakeTimeGroupGenerator();
+
+  private final Faker faker = new Faker();
 
   @BeforeAll
   static void setUp() {
@@ -72,12 +81,16 @@ class TimePostingDao_postgresTest {
 
   @Test
   void doesUserExist() {
-    timePostingDaoTestHelper.doesUserExist(675);
+    final int userId = faker.number().numberBetween(1000, 5000);
+    final User user = fakeTimeGroupGenerator.randomUser();
+    user.setEmail(user.getExternalId() + USER_EMAIL_DOMAIN);
+    timePostingDaoTestHelper.doesUserExist(userId, user);
   }
 
   @Test
   void doesMatterExist() {
-    timePostingDaoTestHelper.doesMatterExist(600);
+    final int caseId = faker.number().numberBetween(1000, 5000);
+    timePostingDaoTestHelper.doesMatterExist(caseId);
   }
 
   @Test
@@ -87,6 +100,11 @@ class TimePostingDao_postgresTest {
 
   @Test
   void createWorklog() {
-    timePostingDaoTestHelper.createWorklog();
+    final User user = fakeTimeGroupGenerator.randomUser();
+    user.setEmail(user.getExternalId() + USER_EMAIL_DOMAIN);
+
+    final int userId = faker.number().numberBetween(1000, 5000);
+    timePostingDaoTestHelper.createUserIdentity(userId, user.getExternalId());
+    timePostingDaoTestHelper.createWorklog(userId, user);
   }
 }
