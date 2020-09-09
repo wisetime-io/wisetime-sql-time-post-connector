@@ -51,7 +51,7 @@ class SQLTimePostConnectorInitTest {
         .getResource("timegroup-narrative-template.ftl").getPath();
     RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.NARRATIVE_PATH, fileLocation);
     final String sqlFileLocation = getClass().getClassLoader()
-        .getResource("time_post/sqlserver_time_post_sql.yaml").getPath();
+        .getResource("db_schema/sqlserver/time_post_sql.yaml").getPath();
     RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH, sqlFileLocation);
     RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH, "/SomePath/");
     connector.init(new ConnectorModule(apiClientMock, connectorStoreMock, 5));

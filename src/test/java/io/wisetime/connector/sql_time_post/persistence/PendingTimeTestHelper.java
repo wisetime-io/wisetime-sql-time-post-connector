@@ -11,6 +11,8 @@ import io.wisetime.generated.connect.User;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.codejargon.fluentjdbc.api.FluentJdbc;
@@ -18,13 +20,11 @@ import org.codejargon.fluentjdbc.api.FluentJdbc;
 /**
  * @author dchandler
  */
-class PendingTimeHelper {
+@Singleton
+class PendingTimeTestHelper {
 
+  @Inject
   private FluentJdbc fluentJdbc;
-
-  PendingTimeHelper(FluentJdbc fluentJdbc) {
-    this.fluentJdbc = fluentJdbc;
-  }
 
   Optional<PendingTime> getPendingTime() {
     return fluentJdbc.query().select("select * from wt_post_time")
@@ -42,24 +42,27 @@ class PendingTimeHelper {
   }
 
   void assertPendingTime(PendingTime pendingTime, Worklog worklog, User user) {
-    assertThat(pendingTime.getCaseId())
-        .isEqualTo(worklog.getMatterId());
-    assertThat(pendingTime.getActivityCode())
-        .isEqualTo(worklog.getActivityCode());
-    assertThat(pendingTime.getEmail())
-        .isEqualTo(user.getEmail());
-    assertThat(pendingTime.getUsername())
-        .isEqualTo(user.getExternalId());
+    assertThat(pendingTime)
+        .extracting(PendingTime::getCaseId,
+            PendingTime::getActivityCode,
+            PendingTime::getEmail,
+            PendingTime::getUsername,
+            PendingTime::getDurationSeconds,
+            PendingTime::getChargeableTimeSeconds,
+            PendingTime::getNarrativeInternal,
+            PendingTime::getNarrative)
+        .containsExactly(
+            worklog.getMatterId(),
+            worklog.getActivityCode(),
+            user.getEmail(),
+            user.getExternalId(),
+            worklog.getDurationSeconds(),
+            worklog.getChargeableTimeSeconds(),
+            worklog.getNarrativeInternal(),
+            worklog.getNarrative());
+
     assertThat(pendingTime.getStartTime())
         .isEqualToIgnoringSeconds(worklog.getStartTime());
-    assertThat(pendingTime.getDurationSeconds())
-        .isEqualTo(worklog.getDurationSeconds());
-    assertThat(pendingTime.getChargeableTimeSeconds())
-        .isEqualTo(worklog.getChargeableTimeSeconds());
-    assertThat(pendingTime.getNarrativeInternal())
-        .isEqualTo(worklog.getNarrativeInternal());
-    assertThat(pendingTime.getNarrative())
-        .isEqualTo(worklog.getNarrative());
   }
 
   /**

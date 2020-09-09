@@ -4,44 +4,35 @@
 
 package io.wisetime.connector.sql_time_post.persistence;
 
-import com.google.common.base.Preconditions;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Provider;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.DB_PASSWORD;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.DB_USER;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.JDBC_URL;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.javafaker.Faker;
-import com.zaxxer.hikari.HikariDataSource;
-
-import io.wisetime.connector.sql_time_post.persistence.PendingTimeHelper.PendingTime;
-import java.time.LocalDateTime;
-import org.codejargon.fluentjdbc.api.FluentJdbc;
-import org.codejargon.fluentjdbc.api.FluentJdbcBuilder;
-import org.codejargon.fluentjdbc.api.query.Query;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.MigrationVersion;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-
-import javax.inject.Inject;
-
+import com.google.common.base.Preconditions;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.sql_time_post.ConnectorLauncher;
 import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
 import io.wisetime.connector.sql_time_post.model.Worklog;
+import io.wisetime.connector.sql_time_post.persistence.PendingTimeTestHelper.PendingTime;
+import io.wisetime.connector.sql_time_post.persistence.TimePostingDaoTestHelper.FluentJdbcTestDbModule;
 import io.wisetime.generated.connect.User;
 import io.wisetime.test_docker.ContainerRuntimeSpec;
 import io.wisetime.test_docker.DockerLauncher;
 import io.wisetime.test_docker.containers.SqlServer;
-
-import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.DB_PASSWORD;
-import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.DB_USER;
-import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.JDBC_URL;
-import static org.assertj.core.api.Assertions.assertThat;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import org.codejargon.fluentjdbc.api.FluentJdbc;
+import org.codejargon.fluentjdbc.api.query.Query;
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author pascal
@@ -49,22 +40,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TimePostingDao_sqlServerTest {
 
   private static JdbcDatabaseContainer sqlServerContainer;
-  private static FakeTimeGroupGenerator fakeTimeGroupGenerator = new FakeTimeGroupGenerator();
-  private static Faker faker = new Faker();
+
+  private final FakeTimeGroupGenerator fakeTimeGroupGenerator = new FakeTimeGroupGenerator();
+
+  private final Faker faker = new Faker();
 
   private static TimePostingDao postTimeDao;
+
   private static FluentJdbc fluentJdbc;
 
-  private static PendingTimeHelper pendingTimeHelper;
+  private static TimePostingDaoTestHelper timePostingDaoTestHelper;
+
+  private static PendingTimeTestHelper pendingTimeTestHelper;
 
   @BeforeAll
   static void setUp() throws InterruptedException {
+    sqlServerContainer = getSqlServerContainer();
+
     final String fileLocation = TimePostingDao_sqlServerTest.class
         .getClassLoader()
-        .getResource("time_post/sqlserver_time_post_sql.yaml")
+        .getResource("db_schema/sqlserver/time_post_sql.yaml")
         .getPath();
-    RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH, fileLocation);
-    sqlServerContainer = getContainer();
+
+    RuntimeConfig.setProperty(TIME_POST_SQL_PATH, fileLocation);
     RuntimeConfig.setProperty(JDBC_URL, sqlServerContainer.getJdbcUrl());
     RuntimeConfig.setProperty(DB_USER, sqlServerContainer.getUsername());
     RuntimeConfig.setProperty(DB_PASSWORD, sqlServerContainer.getPassword());
@@ -72,12 +70,14 @@ class TimePostingDao_sqlServerTest {
     // SQL Server often needs more time to start
     Thread.sleep(30000);
     final Injector injector = Guice.createInjector(
-        new ConnectorLauncher.DbModule(), new FlywayTestDbModule()
-    );
+        new ConnectorLauncher.DbModule(),
+        new TimePostingDaoTestHelper.FlywayTestDbModule("db_schema/sqlserver/"),
+        new FluentJdbcTestDbModule());
 
     postTimeDao = injector.getInstance(TimePostingDao.class);
-    fluentJdbc = new FluentJdbcBuilder().connectionProvider(injector.getInstance(HikariDataSource.class)).build();
-    pendingTimeHelper = new PendingTimeHelper(fluentJdbc);
+    fluentJdbc = injector.getInstance(FluentJdbc.class);
+    timePostingDaoTestHelper = injector.getInstance(TimePostingDaoTestHelper.class);
+    pendingTimeTestHelper = injector.getInstance(PendingTimeTestHelper.class);
 
     // Apply DB schema to test db
     injector.getInstance(Flyway.class).migrate();
@@ -101,15 +101,12 @@ class TimePostingDao_sqlServerTest {
 
   @Test
   void canQueryDb() {
-    assertThat(postTimeDao.canQueryDb())
-        .as("should return true if connected to a database")
-        .isTrue();
+    timePostingDaoTestHelper.assertCanQueryDb();
   }
 
   @Test
   void doesUserExist() {
     final User user = fakeTimeGroupGenerator.randomUser();
-
     assertThat(postTimeDao.findUserId(user.getEmail()))
         .as("User not in DB")
         .isEmpty();
@@ -166,9 +163,9 @@ class TimePostingDao_sqlServerTest {
 
     postTimeDao.createWorklog(worklog);
 
-    final PendingTime pendingTime = pendingTimeHelper.getPendingTime()
+    final PendingTime pendingTime = pendingTimeTestHelper.getPendingTime()
         .orElseThrow(() -> new RuntimeException("Pending time should exist"));
-    pendingTimeHelper.assertPendingTime(pendingTime, worklog, user);
+    pendingTimeTestHelper.assertPendingTime(pendingTime, worklog, user);
   }
 
   private String createCase(final int caseId) {
@@ -176,13 +173,13 @@ class TimePostingDao_sqlServerTest {
     final String title = faker.company().name();
 
     final String insertCaseSql = "INSERT INTO CASES (CASEID, IRN, TITLE, CASETYPE, PROPERTYTYPE, COUNTRYCODE, STATUSCODE) " +
-        "VALUES (:caseid, :irn, :title, :casetype, :proptertytype, :countrycode, :statuscode)";
+        "VALUES (:caseid, :irn, :title, :casetype, :propertytype, :countrycode, :statuscode)";
     fluentJdbc.query().update(insertCaseSql)
         .namedParam("caseid", caseId)
         .namedParam("irn", irn)
         .namedParam("title", title)
         .namedParam("casetype", "C")
-        .namedParam("proptertytype", "P")
+        .namedParam("propertytype", "P")
         .namedParam("countrycode", faker.address().countryCode())
         .run();
 
@@ -217,34 +214,7 @@ class TimePostingDao_sqlServerTest {
         .run();
   }
 
-  /**
-   * Initializes database schema for unit tests
-   */
-  public static class FlywayTestDbModule extends AbstractModule {
-
-    @Override
-    protected void configure() {
-      bind(Flyway.class).toProvider(FlywayPatriciaProvider.class);
-    }
-
-    private static class FlywayPatriciaProvider implements Provider<Flyway> {
-
-      @Inject
-      private Provider<HikariDataSource> dataSourceProvider;
-
-      @Override
-      public Flyway get() {
-        Flyway flyway = new Flyway();
-        flyway.setDataSource(dataSourceProvider.get());
-        flyway.setBaselineVersion(MigrationVersion.fromVersion("0"));
-        flyway.setBaselineOnMigrate(true);
-        flyway.setLocations("db_schema/sqlserver/");
-        return flyway;
-      }
-    }
-  }
-
-  private static JdbcDatabaseContainer getContainer() {
+  private static JdbcDatabaseContainer getSqlServerContainer() {
     ContainerRuntimeSpec container = DockerLauncher.instance().createContainer(new SqlServer());
     return new JdbcDatabaseContainer(container);
   }
