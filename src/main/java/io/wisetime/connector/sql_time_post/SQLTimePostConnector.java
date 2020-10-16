@@ -106,6 +106,11 @@ public class SQLTimePostConnector implements WiseTimeConnector {
   }
 
   @Override
+  public void performActivityTypeUpdate() {
+    // Activity type update is not performed in this connector
+  }
+
+  @Override
   public PostResult postTime(Request request, TimeGroup timeGroup) {
     log.info("Posted time received: {}", timeGroup.getGroupId());
 

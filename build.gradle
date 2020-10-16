@@ -26,15 +26,15 @@ plugins {
     id "com.github.ben-manes.versions" version '0.21.0'
     id 'net.ltgt.apt' version '0.21'
     id 'net.ltgt.apt-idea' version "0.21"
-    id "io.wisetime.versionChecker" version "0.9.18"
+    id "io.wisetime.versionChecker" version "0.9.28"
 }
 
 apply from: "$rootDir/gradle/conf/checkstyle.gradle"
 apply from: "$rootDir/gradle/conf/jacoco.gradle"
 
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 group = 'io.wisetime'
 archivesBaseName = 'wisetime-sql-time-post-connector'
@@ -46,7 +46,7 @@ jib {
     if (targetArch == 'arm64v8') {
         println 'building image with architecture: arm64v8'
         from {
-            image = "arm64v8/openjdk:8-alpine"
+            image = "arm64v8/openjdk:11.0.8-jdk-buster"
         }
         to {
             image = "wisetime/wisetime-sql-time-post-connector-arm64v8"
@@ -54,7 +54,7 @@ jib {
     } else {
         println 'building image with (default) architecture: amd64'
         from {
-            image = "wisetime/wisetime-java8-connector"
+            image = "wisetime/wisetime-java11-connector"
         }
         to {
             image = "wisetime/wisetime-sql-time-post-connector"
@@ -97,7 +97,7 @@ if (taskRequestString.contains("dependencyUpdates")) {
 }
 
 dependencies {
-    compile 'io.wisetime:wisetime-connector:2.4.0'
+    compile 'io.wisetime:wisetime-connector:2.5.1-1'
 
     compile('com.google.inject:guice:4.2.3:no_aop') {
         exclude group: 'com.google.guava', module: 'guava'
