@@ -22,6 +22,8 @@ import org.codejargon.fluentjdbc.api.mapper.Mappers;
 import org.codejargon.fluentjdbc.api.query.Query;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
+import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 
 /**
  * @author dchandler
@@ -212,12 +214,12 @@ class TimePostingDaoTestHelper {
 
       @Override
       public Flyway get() {
-        Flyway flyway = new Flyway();
-        flyway.setDataSource(dataSourceProvider.get());
-        flyway.setBaselineVersion(MigrationVersion.fromVersion("0"));
-        flyway.setBaselineOnMigrate(true);
-        flyway.setLocations(flywayLocation);
-        return flyway;
+        final Configuration dbConfig = new FluentConfiguration()
+            .dataSource(dataSourceProvider.get())
+            .baselineVersion(MigrationVersion.fromVersion("0"))
+            .baselineOnMigrate(true)
+            .locations(flywayLocation);
+        return new Flyway(dbConfig);
       }
     }
   }

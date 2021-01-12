@@ -99,6 +99,16 @@ class TimePostingDao_sqlServerTest {
   }
 
   @Test
+  void handleInvalidActivityCode() {
+    final String invalidActivityCode = "123abc";
+    assertThat(postTimeDao.doesActivityCodeExist(invalidActivityCode))
+        .as("In some cases where the configured query may expect the code in a different format it should not"
+            + " throw an exception and show the exception message to the user. In this particular test the configured"
+            + " query expects the code to be a numeric value.")
+        .isFalse();
+  }
+
+  @Test
   void createWorklog() {
     final User user = fakeTimeGroupGenerator.randomUser();
     final int userId = faker.number().numberBetween(1000, 5000);
@@ -112,6 +122,7 @@ class TimePostingDao_sqlServerTest {
   }
 
   private static class JdbcDatabaseContainer {
+
     private final String jdbcUrl;
 
     JdbcDatabaseContainer(ContainerRuntimeSpec containerSpec) {

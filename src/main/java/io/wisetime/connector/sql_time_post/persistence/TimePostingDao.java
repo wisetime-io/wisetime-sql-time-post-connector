@@ -10,6 +10,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import io.wisetime.connector.sql_time_post.model.TimePostingQueries;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.codejargon.fluentjdbc.api.FluentJdbc;
 import org.codejargon.fluentjdbc.api.FluentJdbcBuilder;
 import org.codejargon.fluentjdbc.api.mapper.Mappers;
@@ -22,6 +23,7 @@ import io.wisetime.connector.sql_time_post.model.Worklog;
  *
  * @author pascal
  */
+@Slf4j
 public class TimePostingDao {
 
   private final FluentJdbc fluentJdbc;
@@ -52,11 +54,16 @@ public class TimePostingDao {
   }
 
   public boolean doesActivityCodeExist(String activityCode) {
-    return query().select(queries.getDoesActivityCodeExistSql())
-        .namedParam("activityCode", activityCode)
-        .maxRows(1L)
-        .firstResult(rs -> rs)
-        .isPresent();
+    try {
+      return query().select(queries.getDoesActivityCodeExistSql())
+          .namedParam("activityCode", activityCode)
+          .maxRows(1L)
+          .firstResult(rs -> rs)
+          .isPresent();
+    } catch (Exception ex) {
+      log.warn("Error occurred while querying for activityCode={}", activityCode, ex);
+      return Boolean.FALSE;
+    }
   }
 
   public void createWorklog(Worklog worklog) {
