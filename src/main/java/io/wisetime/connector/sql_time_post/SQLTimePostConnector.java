@@ -133,7 +133,7 @@ public class SQLTimePostConnector implements WiseTimeConnector {
     final TimeGroup convertedTimeGroup = convertToZone(timeGroup, getTimeZoneId());
 
     final Optional<LocalDateTime> activityStartTime = startTime(convertedTimeGroup);
-    if (!activityStartTime.isPresent()) {
+    if (activityStartTime.isEmpty()) {
       return PostResult.PERMANENT_FAILURE().withMessage("Cannot post time group with no time rows");
     }
 
@@ -142,12 +142,12 @@ public class SQLTimePostConnector implements WiseTimeConnector {
         : timeGroup.getUser().getEmail();
 
     Optional<String> userId = postTimeDao.findUserId(emailOrExternalId);
-    if (!userId.isPresent()) {
+    if (userId.isEmpty()) {
       return PostResult.PERMANENT_FAILURE().withMessage("User does not exist in the connected system.");
     }
 
     final Optional<String> activityCode = getTimeGroupActivityCode(timeGroup);
-    if (!activityCode.isPresent()) {
+    if (activityCode.isEmpty()) {
       return PostResult.PERMANENT_FAILURE().withMessage("Time group has an invalid activity code");
     }
 

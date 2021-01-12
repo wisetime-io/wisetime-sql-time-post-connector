@@ -26,7 +26,7 @@ plugins {
     id "com.github.ben-manes.versions" version '0.21.0'
     id 'net.ltgt.apt' version '0.21'
     id 'net.ltgt.apt-idea' version "0.21"
-    id "io.wisetime.versionChecker" version "0.9.28"
+    id "io.wisetime.versionChecker" version "0.10.14"
 }
 
 apply from: "$rootDir/gradle/conf/checkstyle.gradle"
@@ -102,12 +102,14 @@ dependencies {
     compile('com.google.inject:guice:4.2.3:no_aop') {
         exclude group: 'com.google.guava', module: 'guava'
     }
-    compile 'com.google.guava:guava:28.2-jre'
+    compile 'com.google.guava:guava:29.0-jre'
 
     compile 'org.codejargon:fluentjdbc:1.8.3'
     compile 'com.zaxxer:HikariCP:3.3.1'
     compile 'com.microsoft.sqlserver:mssql-jdbc:6.4.0.jre8'
-    compile 'mysql:mysql-connector-java:8.0.21'
+    compile('mysql:mysql-connector-java:8.0.21') {
+        exclude group: 'com.google.protobuf', module: 'protobuf-java'
+    }
     compile 'org.postgresql:postgresql:42.2.16'
 
     compile 'org.yaml:snakeyaml:1.24'
@@ -118,11 +120,11 @@ dependencies {
     testCompile 'org.junit.jupiter:junit-jupiter:5.4.2'
     testCompile 'org.mockito:mockito-core:2.27.0'
     testCompile 'org.assertj:assertj-core:3.12.2'
-    testCompile 'org.flywaydb:flyway-core:5.1.1'
+    testCompile 'org.flywaydb:flyway-core:7.4.0'
     testCompile('com.github.javafaker:javafaker:0.17.2') {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
-    testCompile 'io.wisetime:wisetime-test-support:2.6.2'
+    testCompile 'io.wisetime:wisetime-test-support:2.6.4'
     testCompile("org.projectlombok:lombok:1.18.8")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.8")
 }
