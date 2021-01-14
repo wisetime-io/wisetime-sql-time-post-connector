@@ -4,10 +4,10 @@
 
 package io.wisetime.connector.sql_time_post.persistence;
 
-import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.DB_PASSWORD;
-import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.DB_USER;
-import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.JDBC_URL;
-import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey.DB_PASSWORD;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey.DB_USER;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey.JDBC_URL;
+import static io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey.TIME_POST_SQL_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.javafaker.Faker;

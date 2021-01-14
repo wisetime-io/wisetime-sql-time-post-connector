@@ -5,7 +5,7 @@
 package io.wisetime.connector.sql_time_post.util;
 
 import io.wisetime.connector.config.RuntimeConfig;
-import io.wisetime.connector.sql_time_post.ConnectorLauncher;
+import io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey;
 import io.wisetime.connector.sql_time_post.model.TimePostingQueries;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +22,7 @@ import org.yaml.snakeyaml.constructor.Constructor;
 public class TimePostingQueriesProvider implements Provider<TimePostingQueries> {
   @Override
   public TimePostingQueries get() {
-    String sqlPath = RuntimeConfig.getString(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH)
+    String sqlPath = RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TIME_POST_SQL_PATH)
         .orElseThrow(() -> new IllegalStateException("TIME_POST_SQL_PATH must be set"));
 
     try {

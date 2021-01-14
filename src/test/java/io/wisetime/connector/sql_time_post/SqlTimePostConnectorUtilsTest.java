@@ -4,24 +4,22 @@
 
 package io.wisetime.connector.sql_time_post;
 
-import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
-
-import java.util.Set;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
 import io.wisetime.generated.connect.TimeGroup;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /**
  * @author pascal
  */
-class SQLTimePostConnectorUtilsTest {
+class SqlTimePostConnectorUtilsTest {
 
   @Test
   void getTimeGroupModifiers_returns_all_unique_timerow_modifiers() {
-    final SQLTimePostConnector connector = new SQLTimePostConnector();
+    final SqlTimePostConnector connector = new SqlTimePostConnector();
     final FakeTimeGroupGenerator fakeEntities = new FakeTimeGroupGenerator();
     final String activityType1 = "123";
     final String activityType2 = null;
