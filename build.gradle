@@ -26,7 +26,7 @@ plugins {
     id "com.github.ben-manes.versions" version '0.21.0'
     id 'net.ltgt.apt' version '0.21'
     id 'net.ltgt.apt-idea' version "0.21"
-    id "io.wisetime.versionChecker" version "0.10.14"
+    id "io.wisetime.versionChecker" version "0.10.15"
 }
 
 apply from: "$rootDir/gradle/conf/checkstyle.gradle"
@@ -83,13 +83,6 @@ sourceSets {
     }
 }
 
-ext.jacocoLimits = [
-        'instruction': 54,
-        'line'       : 76,
-        'method'     : 71,
-        'class'      : 75
-]
-
 def taskRequestString = getGradle().getStartParameter().getTaskRequests().toString()
 if (taskRequestString.contains("dependencyUpdates")) {
     // add exclusions for reporting on updates and vulnerabilities
@@ -99,7 +92,7 @@ if (taskRequestString.contains("dependencyUpdates")) {
 dependencies {
     compile 'io.wisetime:wisetime-connector:2.5.1-1'
 
-    compile('com.google.inject:guice:4.2.3:no_aop') {
+    compile('com.google.inject:guice:5.0.0-BETA-1') {
         exclude group: 'com.google.guava', module: 'guava'
     }
     compile 'com.google.guava:guava:29.0-jre'

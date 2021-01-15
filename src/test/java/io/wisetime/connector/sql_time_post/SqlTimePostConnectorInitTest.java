@@ -12,9 +12,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.wisetime.connector.ConnectorModule;
 import io.wisetime.connector.api_client.ApiClient;
-import io.wisetime.connector.sql_time_post.persistence.TimePostingDao;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.datastore.ConnectorStore;
+import io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey;
+import io.wisetime.connector.sql_time_post.persistence.TimePostingDao;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,20 +24,20 @@ import org.junit.jupiter.api.Test;
  * @author pascal
  */
 @SuppressWarnings("ConstantName")
-class SQLTimePostConnectorInitTest {
+class SqlTimePostConnectorInitTest {
 
   private static final TimePostingDao postTimeDaoMock = mock(TimePostingDao.class);
   private static final ApiClient apiClientMock = mock(ApiClient.class);
   private static final ConnectorStore connectorStoreMock = mock(ConnectorStore.class);
 
-  private static SQLTimePostConnector connector;
+  private static SqlTimePostConnector connector;
 
   @BeforeAll
   static void setUp() {
     Injector injector = Guice.createInjector(binder -> {
       binder.bind(TimePostingDao.class).toProvider(() -> postTimeDaoMock);
     });
-    connector = injector.getInstance(SQLTimePostConnector.class);
+    connector = injector.getInstance(SqlTimePostConnector.class);
   }
 
   @BeforeEach
@@ -49,11 +50,11 @@ class SQLTimePostConnectorInitTest {
   void init_should_initialized_when_required_params_exist() {
     final String fileLocation = getClass().getClassLoader()
         .getResource("timegroup-narrative-template.ftl").getPath();
-    RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.NARRATIVE_PATH, fileLocation);
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.NARRATIVE_PATH, fileLocation);
     final String sqlFileLocation = getClass().getClassLoader()
         .getResource("db_schema/sqlserver/time_post_sql.yaml").getPath();
-    RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TIME_POST_SQL_PATH, sqlFileLocation);
-    RuntimeConfig.setProperty(ConnectorLauncher.SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH, "/SomePath/");
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.TIME_POST_SQL_PATH, sqlFileLocation);
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH, "/SomePath/");
     connector.init(new ConnectorModule(apiClientMock, connectorStoreMock, 5));
   }
 

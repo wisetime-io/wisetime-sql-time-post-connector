@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020 Practice Insight Pty Ltd. All Rights Reserved.
+ */
+
 package io.wisetime.connector.sql_time_post.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -119,8 +123,8 @@ class TimePostingDaoTestHelper {
 
   void createEmployee(int employeeId, String email, String loginId) {
     long mainEmailId = faker.number().randomNumber();
-    fluentJdbc.query().update("INSERT INTO TELECOMMUNICATION (TELECODE, TELECOMNUMBER, TELECOMTYPE) " +
-        "VALUES (:telecode, :email, 1903)")
+    fluentJdbc.query().update("INSERT INTO TELECOMMUNICATION (TELECODE, TELECOMNUMBER, TELECOMTYPE) "
+        + "VALUES (:telecode, :email, 1903)")
         .namedParam("telecode", mainEmailId)
         .namedParam("email", email)
         .run();

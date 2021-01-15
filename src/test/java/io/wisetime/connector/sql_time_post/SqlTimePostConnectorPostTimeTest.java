@@ -4,37 +4,6 @@
 
 package io.wisetime.connector.sql_time_post;
 
-import com.google.common.collect.ImmutableList;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
-import io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey;
-import io.wisetime.connector.sql_time_post.persistence.TimePostingDao;
-import java.util.Collections;
-import java.util.Optional;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
-
-import io.wisetime.connector.ConnectorModule;
-import io.wisetime.connector.api_client.ApiClient;
-import io.wisetime.connector.api_client.PostResult;
-import io.wisetime.connector.api_client.PostResult.PostResultStatus;
-import io.wisetime.connector.config.RuntimeConfig;
-import io.wisetime.connector.datastore.ConnectorStore;
-import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
-import io.wisetime.connector.sql_time_post.model.Worklog;
-import io.wisetime.generated.connect.Tag;
-import io.wisetime.generated.connect.TimeGroup;
-import io.wisetime.generated.connect.TimeRow;
-import io.wisetime.generated.connect.User;
-import spark.Request;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -47,10 +16,38 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import io.wisetime.connector.ConnectorModule;
+import io.wisetime.connector.api_client.ApiClient;
+import io.wisetime.connector.api_client.PostResult;
+import io.wisetime.connector.api_client.PostResult.PostResultStatus;
+import io.wisetime.connector.config.RuntimeConfig;
+import io.wisetime.connector.datastore.ConnectorStore;
+import io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey;
+import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
+import io.wisetime.connector.sql_time_post.model.Worklog;
+import io.wisetime.connector.sql_time_post.persistence.TimePostingDao;
+import io.wisetime.generated.connect.Tag;
+import io.wisetime.generated.connect.TimeGroup;
+import io.wisetime.generated.connect.TimeRow;
+import io.wisetime.generated.connect.User;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import spark.Request;
+
 /**
  * @author pascal
  */
-class SQLTimePostConnectorPostTimeTest {
+class SqlTimePostConnectorPostTimeTest {
 
   private static final String TAG_UPSERT_PATH = "/Inprotech/";
 
@@ -59,22 +56,22 @@ class SQLTimePostConnectorPostTimeTest {
   private static ApiClient apiClientMock = mock(ApiClient.class);
   private static TimePostingDao postTimeDaoMock = mock(TimePostingDao.class);
 
-  private static SQLTimePostConnector connector;
+  private static SqlTimePostConnector connector;
   private final FakeTimeGroupGenerator fakeGenerator = new FakeTimeGroupGenerator();
 
   @BeforeAll
   static void setUp() {
-    RuntimeConfig.setProperty(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH, TAG_UPSERT_PATH);
-    final String fileLocation = SQLTimePostConnectorPostTimeTest.class.getClassLoader()
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH, TAG_UPSERT_PATH);
+    final String fileLocation = SqlTimePostConnectorPostTimeTest.class.getClassLoader()
         .getResource("timegroup-narrative-template.ftl").getPath();
-    RuntimeConfig.setProperty(SQLPostTimeConnectorConfigKey.NARRATIVE_PATH, fileLocation);
-    final String fileLocationInternal = SQLTimePostConnectorPostTimeTest.class.getClassLoader()
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.NARRATIVE_PATH, fileLocation);
+    final String fileLocationInternal = SqlTimePostConnectorPostTimeTest.class.getClassLoader()
         .getResource("timegroup-narrative-internal-template.ftl").getPath();
-    RuntimeConfig.setProperty(SQLPostTimeConnectorConfigKey.NARRATIVE_INTERNAL_PATH, fileLocationInternal);
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.NARRATIVE_INTERNAL_PATH, fileLocationInternal);
 
     Injector injector = Guice.createInjector(
         binder -> binder.bind(TimePostingDao.class).toProvider(() -> postTimeDaoMock));
-    connector = injector.getInstance(SQLTimePostConnector.class);
+    connector = injector.getInstance(SqlTimePostConnector.class);
 
     connector.init(new ConnectorModule(apiClientMock, mock(ConnectorStore.class), 5));
   }
@@ -106,7 +103,7 @@ class SQLTimePostConnectorPostTimeTest {
   void postTime_without_time_rows_should_fail() {
     final TimeGroup groupWithNoTimeRows = fakeGenerator.randomTimeGroup().timeRows(ImmutableList.of());
     groupWithNoTimeRows.getTags()
-        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
+        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
 
     assertThat(connector.postTime(mock(Request.class), groupWithNoTimeRows).getStatus())
         .isEqualTo(PostResultStatus.PERMANENT_FAILURE);
@@ -118,7 +115,7 @@ class SQLTimePostConnectorPostTimeTest {
   void postTime_nonexistent_author_should_fail() {
     final TimeGroup timeGroup = fakeGenerator.randomTimeGroup();
     timeGroup.getTags()
-        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
+        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
 
     when(postTimeDaoMock.findUserId(anyString()))
         .thenReturn(Optional.empty());
@@ -136,7 +133,7 @@ class SQLTimePostConnectorPostTimeTest {
         fakeGenerator.randomUser().externalId(null).email("email@domain.com")
     );
     timeGroup.getTags()
-        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
+        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
 
     ArgumentCaptor<String> userIdentityCaptor = ArgumentCaptor.forClass(String.class);
     when(postTimeDaoMock.findUserId(userIdentityCaptor.capture()))
@@ -154,7 +151,7 @@ class SQLTimePostConnectorPostTimeTest {
         fakeGenerator.randomTimeRow().modifier("1"),
         fakeGenerator.randomTimeRow().modifier(null)));
     timeGroup.getTags()
-        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
+        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
 
     when(postTimeDaoMock.findUserId(any()))
         .thenReturn(Optional.of("123"));
@@ -170,7 +167,7 @@ class SQLTimePostConnectorPostTimeTest {
   void postTime_nonexistent_activity_code_should_fail() {
     final TimeGroup timeGroup = fakeGenerator.randomTimeGroup(DEFAULT_ACTIVITY_CODE);
     timeGroup.getTags()
-        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
+        .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
 
     when(postTimeDaoMock.findUserId(any()))
         .thenReturn(Optional.of("123"));

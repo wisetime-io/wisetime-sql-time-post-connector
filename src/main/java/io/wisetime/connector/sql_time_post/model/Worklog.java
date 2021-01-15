@@ -4,10 +4,9 @@
 
 package io.wisetime.connector.sql_time_post.model;
 
+import java.time.OffsetDateTime;
 import lombok.Data;
 import lombok.experimental.Accessors;
-
-import java.time.OffsetDateTime;
 
 /**
  * @author pascal

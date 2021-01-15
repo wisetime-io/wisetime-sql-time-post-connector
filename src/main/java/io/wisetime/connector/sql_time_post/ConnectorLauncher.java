@@ -30,7 +30,7 @@ public class ConnectorLauncher {
   public static ConnectorController buildConnectorController() {
     return ConnectorController.newBuilder()
         .disableTagScan()
-        .withWiseTimeConnector(Guice.createInjector(new DbModule()).getInstance(SQLTimePostConnector.class))
+        .withWiseTimeConnector(Guice.createInjector(new DbModule()).getInstance(SqlTimePostConnector.class))
         .build();
   }
 
@@ -39,7 +39,7 @@ public class ConnectorLauncher {
    *
    * @author pascal
    */
-  public enum SQLPostTimeConnectorConfigKey implements RuntimeConfigKey {
+  public enum SqlPostTimeConnectorConfigKey implements RuntimeConfigKey {
 
     JDBC_URL("JDBC_URL"),
     DB_USER("DB_USER"),
@@ -52,7 +52,7 @@ public class ConnectorLauncher {
 
     private final String configKey;
 
-    SQLPostTimeConnectorConfigKey(final String configKey) {
+    SqlPostTimeConnectorConfigKey(final String configKey) {
       this.configKey = configKey;
     }
 
@@ -72,17 +72,17 @@ public class ConnectorLauncher {
       final HikariConfig hikariConfig = new HikariConfig();
 
       hikariConfig.setJdbcUrl(
-          RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.JDBC_URL)
+          RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.JDBC_URL)
               .orElseThrow(() -> new RuntimeException("Missing required JDBC_URL configuration"))
       );
 
       hikariConfig.setUsername(
-          RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.DB_USER)
+          RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.DB_USER)
               .orElseThrow(() -> new RuntimeException("Missing required DB_USER configuration"))
       );
 
       hikariConfig.setPassword(
-          RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.DB_PASSWORD)
+          RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.DB_PASSWORD)
               .orElseThrow(() -> new RuntimeException("Missing required DB_PASSWORD configuration"))
       );
       hikariConfig.setConnectionTimeout(TimeUnit.MINUTES.toMillis(1));

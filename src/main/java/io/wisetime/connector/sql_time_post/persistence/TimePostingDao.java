@@ -5,18 +5,15 @@
 package io.wisetime.connector.sql_time_post.persistence;
 
 import com.google.inject.Inject;
-
 import com.zaxxer.hikari.HikariDataSource;
-
 import io.wisetime.connector.sql_time_post.model.TimePostingQueries;
+import io.wisetime.connector.sql_time_post.model.Worklog;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.codejargon.fluentjdbc.api.FluentJdbc;
 import org.codejargon.fluentjdbc.api.FluentJdbcBuilder;
 import org.codejargon.fluentjdbc.api.mapper.Mappers;
 import org.codejargon.fluentjdbc.api.query.Query;
-
-import io.wisetime.connector.sql_time_post.model.Worklog;
 
 /**
  * DAO for posting time to the connected database. Queries are loaded from yaml file.

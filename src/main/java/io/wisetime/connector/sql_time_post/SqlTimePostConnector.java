@@ -12,10 +12,10 @@ import com.google.inject.Inject;
 import io.wisetime.connector.ConnectorModule;
 import io.wisetime.connector.WiseTimeConnector;
 import io.wisetime.connector.api_client.PostResult;
+import io.wisetime.connector.config.RuntimeConfig;
+import io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnectorConfigKey;
 import io.wisetime.connector.sql_time_post.model.Worklog;
 import io.wisetime.connector.sql_time_post.persistence.TimePostingDao;
-import io.wisetime.connector.config.RuntimeConfig;
-import io.wisetime.connector.sql_time_post.ConnectorLauncher.SQLPostTimeConnectorConfigKey;
 import io.wisetime.connector.template.TemplateFormatter;
 import io.wisetime.connector.template.TemplateFormatterConfig;
 import io.wisetime.connector.utils.DurationCalculator;
@@ -49,9 +49,9 @@ import spark.Request;
  *
  * @author pascal
  */
-public class SQLTimePostConnector implements WiseTimeConnector {
+public class SqlTimePostConnector implements WiseTimeConnector {
 
-  private static final Logger log = LoggerFactory.getLogger(SQLTimePostConnector.class);
+  private static final Logger log = LoggerFactory.getLogger(SqlTimePostConnector.class);
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private TemplateFormatter narrativeFormatter;
@@ -64,10 +64,10 @@ public class SQLTimePostConnector implements WiseTimeConnector {
   public void init(ConnectorModule connectorModule) {
     // check if tag upsert path is configured. Default value doesn't make sense for this connector.
     tagUpsertPath();
-    String narrativePath = RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.NARRATIVE_PATH).orElseThrow(() ->
+    String narrativePath = RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.NARRATIVE_PATH).orElseThrow(() ->
         new IllegalArgumentException("Narrative Template path must be configured"));
     Optional<String> narrativeInternalPath =
-        RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.NARRATIVE_INTERNAL_PATH);
+        RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.NARRATIVE_INTERNAL_PATH);
 
     narrativeFormatter = new TemplateFormatter(
         TemplateFormatterConfig.builder()
@@ -242,7 +242,7 @@ public class SQLTimePostConnector implements WiseTimeConnector {
 
   private String tagUpsertPath() {
     return RuntimeConfig
-        .getString(SQLPostTimeConnectorConfigKey.TAG_UPSERT_PATH)
+        .getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH)
         .orElseThrow(() -> new IllegalArgumentException("TAG_UPSERT_PATH needs to be set"));
   }
 
@@ -272,12 +272,12 @@ public class SQLTimePostConnector implements WiseTimeConnector {
   }
 
   private boolean createdByConnector(Tag tag) {
-    return tag.getPath().equals(tagUpsertPath()) ||
-        tag.getPath().equals(StringUtils.strip(tagUpsertPath(), "/"));
+    return tag.getPath().equals(tagUpsertPath())
+        || tag.getPath().equals(StringUtils.strip(tagUpsertPath(), "/"));
   }
 
   private ZoneId getTimeZoneId() {
-    return ZoneId.of(RuntimeConfig.getString(SQLPostTimeConnectorConfigKey.TIMEZONE).orElse("UTC"));
+    return ZoneId.of(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TIMEZONE).orElse("UTC"));
   }
 
   @VisibleForTesting
