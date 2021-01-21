@@ -4,7 +4,7 @@
 
 buildscript {
   repositories {
-    jcenter()
+    mavenCentral()
     maven {
       // WT published releases
       setUrl("https://s3.eu-central-1.amazonaws.com/artifacts.wisetime.com/mvn2/plugins")
