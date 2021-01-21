@@ -59,22 +59,6 @@ steps:
       - name: host-cache
         path: /cache
 
-  - name: publish-to-s3
-    image: openjdk:11-jdk
-    environment:
-      GRADLE_USER_HOME: .gcache
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
-      AWS_ACCESS_KEY_ID:
-        from_secret: aws-publish-id
-      AWS_SECRET_ACCESS_KEY:
-        from_secret: aws-publish-secret
-    commands:
-      - ./gradlew --info publish -x check -x test
-    when:
-      ref:
-        - refs/heads/master
-        - refs/tags/*
-
   - name: cascade-to-bamboo
     image: registry.dev.wisetime.com/git
     environment:
