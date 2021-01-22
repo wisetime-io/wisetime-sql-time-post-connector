@@ -51,9 +51,8 @@ jib {
     image = "gcr.io/wise-pub/connect-java-11-j9@sha256:98ec5f00539bdffeb678c3b4a34c07c77e4431395286ecc6a083298089b3d0ec"
   }
   to {
-    image = "eu.gcr.io/legebuild/wisetime-sql-time-post-connector"
     project.afterEvaluate { // <-- so we evaluate version after it has been set
-      tags = setOf("${project.version}")
+      image = "wisetime/wisetime-sql-time-post-connector:${project.version}"
     }
   }
 }
