@@ -109,7 +109,10 @@ services:
       MYSQL_USER: docker
       MYSQL_PASSWORD: docker
       MYSQL_RANDOM_ROOT_PASSWORD: yes
-
+trigger:
+  event:
+    - push
+    - tag
 
 ---
 kind: pipeline
