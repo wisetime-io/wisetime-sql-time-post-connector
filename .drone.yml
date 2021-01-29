@@ -109,6 +109,29 @@ services:
       MYSQL_USER: docker
       MYSQL_PASSWORD: docker
       MYSQL_RANDOM_ROOT_PASSWORD: yes
+trigger:
+  event:
+    - push
+    - tag
+
+---
+kind: pipeline
+name: mirror-to-github
+depends_on:
+  - test-and-publish
+
+steps:
+  - name: github-push
+    image: registry.dev.wisetime.com/git
+    environment:
+      GITHUB_SSH_KEY_B64:
+        from_secret: github-ssh-key-b64
+    commands:
+      - ./bin/mirror.sh
+    when:
+      ref:
+        - refs/heads/master
+        - refs/tags/*
 
 trigger:
   event:
@@ -156,3 +179,10 @@ name: smtp-user
 get:
   path: drone/notify/smtp
   name: user
+
+---
+kind: secret
+name: github-ssh-key-b64
+get:
+  path: drone/publish/github/core-log
+  name: gh-wisetime-sql-time-post-connector-key-b64
