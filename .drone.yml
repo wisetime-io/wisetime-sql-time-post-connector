@@ -184,5 +184,5 @@ get:
 kind: secret
 name: github-ssh-key-b64
 get:
-  path: drone/publish/github/core-log
+  path: drone/publish/github/wisetime-sql-time-post-connector
   name: gh-wisetime-sql-time-post-connector-key-b64
