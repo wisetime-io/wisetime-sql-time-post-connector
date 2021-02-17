@@ -21,7 +21,7 @@ plugins {
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
   id("com.google.cloud.tools.jib") version "2.7.1"
   id("com.github.ben-manes.versions") version "0.21.0"
-  id("io.wisetime.versionChecker") version "10.11.1"
+  id("io.wisetime.versionChecker") version "10.11.22"
   id("io.freefair.lombok") version "5.3.0"
 }
 
@@ -90,7 +90,7 @@ dependencies {
   implementation("com.google.inject:guice:5.0.0-BETA-1") {
     exclude(group = "com.google.guava", module = "guava")
   }
-  implementation("com.google.guava:guava:29.0-jre")
+  implementation("com.google.guava:guava:30.0-jre")
 
   implementation("org.codejargon:fluentjdbc:1.8.6")
   implementation("com.zaxxer:HikariCP:3.3.1")
