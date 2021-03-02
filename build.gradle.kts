@@ -19,7 +19,7 @@ plugins {
   java
   idea
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
-  id("com.google.cloud.tools.jib") version "2.7.1"
+  id("com.google.cloud.tools.jib") version "2.8.0"
   id("com.github.ben-manes.versions") version "0.21.0"
   id("io.wisetime.versionChecker") version "10.11.22"
   id("io.freefair.lombok") version "5.3.0"
