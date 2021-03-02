@@ -58,7 +58,7 @@ jib {
 }
 
 repositories {
-  jcenter()
+  mavenCentral()
   maven {
     // Our published releases repo
     setUrl("https://s3.eu-central-1.amazonaws.com/artifacts.wisetime.com/mvn2/releases")
