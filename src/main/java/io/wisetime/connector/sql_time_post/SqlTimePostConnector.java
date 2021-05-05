@@ -157,9 +157,11 @@ public class SqlTimePostConnector implements WiseTimeConnector {
     final int workedTimeSeconds = Math.round(DurationCalculator.of(timeGroup)
         .disregardExperienceWeighting()
         .useDurationFrom(DurationSource.SUM_TIME_ROWS)
+        .roundToNearestSeconds(1) // no rounding
         .calculate());
     final int chargeableTimeSeconds = Math.round(DurationCalculator.of(timeGroup)
         .useExperienceWeighting()
+        .roundToNearestSeconds(1) // no rounding
         .calculate());
 
     final Function<String, String> createWorklog = matterId -> {
