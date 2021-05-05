@@ -21,7 +21,7 @@ plugins {
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
   id("com.google.cloud.tools.jib") version "2.8.0"
   id("com.github.ben-manes.versions") version "0.21.0"
-  id("io.wisetime.versionChecker") version "10.11.22"
+  id("io.wisetime.versionChecker") version "10.11.46"
   id("io.freefair.lombok") version "5.3.0"
 }
 
@@ -85,12 +85,12 @@ if (gradle.startParameter.taskRequests.toString().contains("dependencyUpdates"))
 }
 
 dependencies {
-  implementation("io.wisetime:wisetime-connector:3.0.1")
+  implementation("io.wisetime:wisetime-connector:3.0.11")
 
-  implementation("com.google.inject:guice:5.0.0-BETA-1") {
+  implementation("com.google.inject:guice:5.0.1") {
     exclude(group = "com.google.guava", module = "guava")
   }
-  implementation("com.google.guava:guava:30.0-jre")
+  implementation("com.google.guava:guava:30.1-jre")
 
   implementation("org.codejargon:fluentjdbc:1.8.6")
   implementation("com.zaxxer:HikariCP:3.3.1")
@@ -105,11 +105,26 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.4.2")
   testImplementation("org.mockito:mockito-core:2.27.0")
   testImplementation("org.assertj:assertj-core:3.12.2")
-  testImplementation("org.flywaydb:flyway-core:7.4.0")
+  testImplementation("org.flywaydb:flyway-core:7.5.4")
   testImplementation("com.github.javafaker:javafaker:0.17.2") {
     exclude(group = "org.apache.commons", module = "commons-lang3")
   }
-  testImplementation("io.wisetime:wisetime-test-support:2.6.4")
+  testImplementation("io.wisetime:wisetime-test-support:2.6.13")
+}
+
+configurations.all {
+  resolutionStrategy {
+    eachDependency {
+      if (requested.group == "com.fasterxml.jackson.core") {
+        useVersion("2.12.3")
+        because("use consistent version for all transitive dependencies")
+      }
+      if (requested.name == "commons-lang3") {
+        useVersion("3.12.0")
+        because("use consistent version for all transitive dependencies")
+      }
+    }
+  }
 }
 
 tasks.register<DefaultTask>("printVersionStr") {
