@@ -19,9 +19,9 @@ plugins {
   java
   idea
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
-  id("com.google.cloud.tools.jib") version "2.8.0"
-  id("com.github.ben-manes.versions") version "0.21.0"
-  id("io.wisetime.versionChecker") version "10.11.46"
+  id("com.google.cloud.tools.jib") version "3.0.0"
+  id("com.github.ben-manes.versions") version "0.38.0"
+  id("io.wisetime.versionChecker") version "10.11.56"
   id("io.freefair.lombok") version "5.3.0"
 }
 
@@ -85,7 +85,7 @@ if (gradle.startParameter.taskRequests.toString().contains("dependencyUpdates"))
 }
 
 dependencies {
-  implementation("io.wisetime:wisetime-connector:3.0.11")
+  implementation("io.wisetime:wisetime-connector:3.0.13")
 
   implementation("com.google.inject:guice:5.0.1") {
     exclude(group = "com.google.guava", module = "guava")
