@@ -42,7 +42,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import spark.Request;
 
 /**
  * @author pascal
@@ -93,7 +92,7 @@ class SqlTimePostConnectorPostTimeTest {
   void postTime_without_tags_should_succeed() {
     final TimeGroup groupWithNoTags = fakeGenerator.randomTimeGroup().tags(ImmutableList.of());
 
-    assertThat(connector.postTime(mock(Request.class), groupWithNoTags).getStatus())
+    assertThat(connector.postTime(groupWithNoTags).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     verify(postTimeDaoMock, never()).createWorklog(any(Worklog.class));
@@ -105,7 +104,7 @@ class SqlTimePostConnectorPostTimeTest {
     groupWithNoTimeRows.getTags()
         .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
 
-    assertThat(connector.postTime(mock(Request.class), groupWithNoTimeRows).getStatus())
+    assertThat(connector.postTime(groupWithNoTimeRows).getStatus())
         .isEqualTo(PostResultStatus.PERMANENT_FAILURE);
 
     verify(postTimeDaoMock, never()).createWorklog(any(Worklog.class));
@@ -120,7 +119,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findUserId(anyString()))
         .thenReturn(Optional.empty());
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.PERMANENT_FAILURE);
 
     verify(postTimeDaoMock, times(1)).findUserId(anyString());
@@ -139,7 +138,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findUserId(userIdentityCaptor.capture()))
         .thenReturn(Optional.empty());
 
-    connector.postTime(mock(Request.class), timeGroup);
+    connector.postTime(timeGroup);
 
     assertThat(userIdentityCaptor.getValue())
         .isEqualTo("email@domain.com");
@@ -156,7 +155,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findUserId(any()))
         .thenReturn(Optional.of("123"));
 
-    PostResult result = connector.postTime(mock(Request.class), timeGroup);
+    PostResult result = connector.postTime(timeGroup);
     assertThat(result.getStatus()).isEqualTo(PostResultStatus.PERMANENT_FAILURE);
     assertThat(result.getMessage()).contains("Time group has an invalid activity code");
 
@@ -175,7 +174,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(DEFAULT_ACTIVITY_CODE))
         .thenReturn(false);
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.PERMANENT_FAILURE);
 
     verify(postTimeDaoMock, times(1)).doesActivityCodeExist(any());
@@ -201,7 +200,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findMatterIdByTagName(anyString()))
         .thenReturn(Optional.of("123"));
 
-    final PostResult result = connector.postTime(mock(Request.class), timeGroup);
+    final PostResult result = connector.postTime(timeGroup);
 
     assertThat(result.getStatus())
         .isEqualTo(PostResultStatus.TRANSIENT_FAILURE);
@@ -215,7 +214,7 @@ class SqlTimePostConnectorPostTimeTest {
   void postTime_with_valid_group_should_succeed() {
     final TimeGroup timeGroup = fakeGenerator.randomTimeGroup(DEFAULT_ACTIVITY_CODE);
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
   }
 
@@ -235,7 +234,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findMatterIdByTagName(existentCaseTag.getName()))
         .thenReturn(Optional.of("123"));
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     verify(postTimeDaoMock, times(1)).findMatterIdByTagName(anyString());
@@ -256,9 +255,17 @@ class SqlTimePostConnectorPostTimeTest {
     final User user = fakeGenerator.randomUser().experienceWeightingPercent(50);
 
     final TimeRow earliestTimeRow = fakeGenerator.randomTimeRow()
-        .activityTypeCode(DEFAULT_ACTIVITY_CODE).activityHour(2018110106).firstObservedInHour(45).durationSecs(600);
+        .activityTypeCode(DEFAULT_ACTIVITY_CODE)
+        .activityHour(2018110106)
+        .firstObservedInHour(45)
+        .timezoneOffsetMin(0)
+        .durationSecs(600);
     final TimeRow latestTimeRow = fakeGenerator.randomTimeRow()
-        .activityTypeCode(DEFAULT_ACTIVITY_CODE).activityHour(2018110110).firstObservedInHour(2).durationSecs(2400);
+        .activityTypeCode(DEFAULT_ACTIVITY_CODE)
+        .activityHour(2018110110)
+        .firstObservedInHour(2)
+        .timezoneOffsetMin(0)
+        .durationSecs(2400);
 
     List<Tag> tags = ImmutableList.of(fakeGenerator.randomTag(TAG_UPSERT_PATH, "tag"));
 
@@ -275,7 +282,7 @@ class SqlTimePostConnectorPostTimeTest {
         .user(user)
         .totalDurationSecs(3000);
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
@@ -321,7 +328,7 @@ class SqlTimePostConnectorPostTimeTest {
         .user(user)
         .totalDurationSecs(3000);
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
@@ -367,7 +374,7 @@ class SqlTimePostConnectorPostTimeTest {
         .user(user)
         .totalDurationSecs(3000);
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
@@ -404,7 +411,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findMatterIdByTagName(any()))
         .thenReturn(Optional.of("123"));
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
@@ -439,7 +446,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findMatterIdByTagName("tag1"))
         .thenReturn(Optional.of("123"));
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
@@ -470,7 +477,7 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.findMatterIdByTagName(any()))
         .thenReturn(Optional.of("123"));
 
-    assertThat(connector.postTime(mock(Request.class), timeGroup).getStatus())
+    assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
 
     ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
@@ -497,7 +504,7 @@ class SqlTimePostConnectorPostTimeTest {
     doThrow(new IllegalStateException("Detailed error message why posting time failed"))
         .when(postTimeDaoMock).createWorklog(any());
 
-    final PostResult result = connector.postTime(mock(Request.class), timeGroup);
+    final PostResult result = connector.postTime(timeGroup);
 
     assertThat(result.getStatus())
         .as("should return permanent failure if the posted time was rejected")
@@ -516,7 +523,7 @@ class SqlTimePostConnectorPostTimeTest {
         .tags(ImmutableList.of(tag));
     when(postTimeDaoMock.findMatterIdByTagName(tag.getName()))
         .thenReturn(Optional.empty());
-    final PostResult result = connector.postTime(mock(Request.class), timeGroup);
+    final PostResult result = connector.postTime(timeGroup);
 
     assertThat(result.getStatus())
         .as("should return permanent failure if the posted time was rejected")
@@ -530,7 +537,7 @@ class SqlTimePostConnectorPostTimeTest {
         .totalDurationSecs(1000)
         .user(fakeGenerator.randomUser().experienceWeightingPercent(40))
         .tags(ImmutableList.of(tag));
-    final PostResult result = connector.postTime(mock(Request.class), timeGroup);
+    final PostResult result = connector.postTime(timeGroup);
 
     assertThat(result.getStatus())
         .as("should return success for tag not managed by this connector")

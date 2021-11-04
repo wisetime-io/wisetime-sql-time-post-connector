@@ -77,6 +77,7 @@ public class FakeTimeGroupGenerator {
         .activity(FAKER.lorem().characters(10, 30))
         .activityHour(2018110100 + FAKER.random().nextInt(1, 23))
         .firstObservedInHour(FAKER.number().numberBetween(0, 59))
+        .timezoneOffsetMin(FAKER.random().nextInt(-10, 10) * 60)
         .durationSecs(FAKER.random().nextInt(120, 600))
         .submittedDate(Long.valueOf(FAKER.numerify("2018091#1#5#2####")))
         .modifier(FAKER.lorem().word())

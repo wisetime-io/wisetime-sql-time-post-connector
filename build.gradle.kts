@@ -19,10 +19,10 @@ plugins {
   java
   idea
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
-  id("com.google.cloud.tools.jib") version "3.0.0"
+  id("com.google.cloud.tools.jib") version "3.1.2"
   id("com.github.ben-manes.versions") version "0.38.0"
-  id("io.wisetime.versionChecker") version "10.11.62"
-  id("io.freefair.lombok") version "5.3.0"
+  id("io.wisetime.versionChecker") version "10.11.80"
+  id("io.freefair.lombok") version "6.2.0"
 }
 
 apply(from = "$rootDir/gradle/conf/checkstyle.gradle")
@@ -85,12 +85,14 @@ if (gradle.startParameter.taskRequests.toString().contains("dependencyUpdates"))
 }
 
 dependencies {
-  implementation("io.wisetime:wisetime-connector:3.0.13")
+  implementation("io.wisetime:wisetime-connector:4.1.5")
 
   implementation("com.google.inject:guice:5.0.1") {
     exclude(group = "com.google.guava", module = "guava")
   }
   implementation("com.google.guava:guava:30.1-jre")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${io.wisetime.version.model.LegebuildConst.JACKSON_FASTER}")
+  implementation("org.apache.commons:commons-lang3:${io.wisetime.version.model.LegebuildConst.COMMONS_LANG3}")
 
   implementation("org.codejargon:fluentjdbc:1.8.6")
   implementation("com.zaxxer:HikariCP:3.3.1")
@@ -109,7 +111,7 @@ dependencies {
   testImplementation("com.github.javafaker:javafaker:0.17.2") {
     exclude(group = "org.apache.commons", module = "commons-lang3")
   }
-  testImplementation("io.wisetime:wisetime-test-support:2.6.13")
+  testImplementation("io.wisetime:wisetime-test-support:${io.wisetime.version.model.LegebuildConst.WT_TEST_SUPPORT}")
 }
 
 configurations.all {
@@ -124,6 +126,7 @@ configurations.all {
         because("use consistent version for all transitive dependencies")
       }
     }
+    force("org.slf4j:jcl-over-slf4j:${io.wisetime.version.model.LegebuildConst.SLF4J}")
   }
 }
 

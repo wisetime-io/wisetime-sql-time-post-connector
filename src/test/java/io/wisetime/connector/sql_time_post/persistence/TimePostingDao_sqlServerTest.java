@@ -15,12 +15,13 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.wisetime.connector.config.RuntimeConfig;
 import io.wisetime.connector.sql_time_post.ConnectorLauncher;
+import io.wisetime.connector.sql_time_post.PlainSqlServer;
 import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
 import io.wisetime.connector.sql_time_post.persistence.TimePostingDaoTestHelper.FluentJdbcTestDbModule;
 import io.wisetime.generated.connect.User;
 import io.wisetime.test_docker.ContainerRuntimeSpec;
 import io.wisetime.test_docker.DockerLauncher;
-import io.wisetime.test_docker.containers.SqlServer;
+import lombok.Data;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -117,30 +118,24 @@ class TimePostingDao_sqlServerTest {
   }
 
   private static JdbcDatabaseContainer getSqlServerContainer() {
-    ContainerRuntimeSpec container = DockerLauncher.instance().createContainer(new SqlServer());
-    return new JdbcDatabaseContainer(container);
+    PlainSqlServer containerDefinition = new PlainSqlServer();
+    ContainerRuntimeSpec container = DockerLauncher.instance().createContainer(containerDefinition);
+    return new JdbcDatabaseContainer(container, containerDefinition.getUsername(), containerDefinition.getPassword());
   }
 
+  @Data
   private static class JdbcDatabaseContainer {
 
     private final String jdbcUrl;
+    private final String username;
+    private final String password;
 
-    JdbcDatabaseContainer(ContainerRuntimeSpec containerSpec) {
+    JdbcDatabaseContainer(ContainerRuntimeSpec containerSpec, String username, String password) {
       jdbcUrl = String.format("jdbc:sqlserver://%s:%d",
           containerSpec.getContainerIpAddress(),
           containerSpec.getRequiredMappedPort(1433));
-    }
-
-    String getJdbcUrl() {
-      return jdbcUrl;
-    }
-
-    String getUsername() {
-      return "SA";
-    }
-
-    String getPassword() {
-      return "A_Str0ng_Required_Password";
+      this.username = username;
+      this.password = password;
     }
   }
 }
