@@ -4,9 +4,6 @@
 
 package io.wisetime.connector.sql_time_post;
 
-import static io.wisetime.connector.utils.ActivityTimeCalculator.startTime;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.wisetime.connector.ConnectorModule;
@@ -18,31 +15,24 @@ import io.wisetime.connector.sql_time_post.model.Worklog;
 import io.wisetime.connector.sql_time_post.persistence.TimePostingDao;
 import io.wisetime.connector.template.TemplateFormatter;
 import io.wisetime.connector.template.TemplateFormatterConfig;
+import io.wisetime.connector.template.TemplateFormatterConfig.DisplayZone;
+import io.wisetime.connector.utils.ActivityTimeCalculator;
 import io.wisetime.connector.utils.DurationCalculator;
 import io.wisetime.connector.utils.DurationSource;
 import io.wisetime.generated.connect.Tag;
 import io.wisetime.generated.connect.TimeGroup;
 import io.wisetime.generated.connect.TimeRow;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.codejargon.fluentjdbc.api.FluentJdbcSqlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spark.Request;
 
 /**
  * WiseTime Connector implementation for generic time posting
@@ -52,7 +42,6 @@ import spark.Request;
 public class SqlTimePostConnector implements WiseTimeConnector {
 
   private static final Logger log = LoggerFactory.getLogger(SqlTimePostConnector.class);
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private TemplateFormatter narrativeFormatter;
   private Optional<TemplateFormatter> narrativeInternalFormatter;
@@ -73,12 +62,14 @@ public class SqlTimePostConnector implements WiseTimeConnector {
         TemplateFormatterConfig.builder()
             .withTemplatePath(narrativePath)
             .withWindowsClr(true)
+            .withDisplayZone(DisplayZone.USER_LOCAL)
             .build()
     );
     narrativeInternalFormatter = narrativeInternalPath.map(s -> new TemplateFormatter(
         TemplateFormatterConfig.builder()
             .withTemplatePath(s)
             .withWindowsClr(true)
+            .withDisplayZone(DisplayZone.USER_LOCAL)
             .build()
     ));
   }
@@ -111,7 +102,7 @@ public class SqlTimePostConnector implements WiseTimeConnector {
   }
 
   @Override
-  public PostResult postTime(Request request, TimeGroup timeGroup) {
+  public PostResult postTime(TimeGroup timeGroup) {
     log.info("Posted time received: {}", timeGroup.getGroupId());
 
     List<Tag> relevantTags = timeGroup.getTags().stream()
@@ -130,9 +121,7 @@ public class SqlTimePostConnector implements WiseTimeConnector {
       return PostResult.SUCCESS().withMessage("Time group has no tags. There is nothing to post.");
     }
 
-    final TimeGroup convertedTimeGroup = convertToZone(timeGroup, getTimeZoneId());
-
-    final Optional<LocalDateTime> activityStartTime = startTime(convertedTimeGroup);
+    final Optional<Instant> activityStartTime = ActivityTimeCalculator.startInstant(timeGroup);
     if (activityStartTime.isEmpty()) {
       return PostResult.PERMANENT_FAILURE().withMessage("Cannot post time group with no time rows");
     }
@@ -151,8 +140,8 @@ public class SqlTimePostConnector implements WiseTimeConnector {
       return PostResult.PERMANENT_FAILURE().withMessage("Time group has an invalid activity code");
     }
 
-    final String narrative = narrativeFormatter.format(convertedTimeGroup);
-    Optional<String> narrativeInternal = narrativeInternalFormatter.map(f -> f.format(convertedTimeGroup));
+    final String narrative = narrativeFormatter.format(timeGroup);
+    Optional<String> narrativeInternal = narrativeInternalFormatter.map(f -> f.format(timeGroup));
 
     final int workedTimeSeconds = Math.round(DurationCalculator.of(timeGroup)
         .disregardExperienceWeighting()
@@ -170,7 +159,7 @@ public class SqlTimePostConnector implements WiseTimeConnector {
           .setUserId(userId.get())
           .setActivityCode(activityCode.get())
           .setNarrative(narrative)
-          .setStartTime(OffsetDateTime.of(activityStartTime.get(), ZoneOffset.UTC))
+          .setStartTime(activityStartTime.get().atZone(getTimeZoneId()).toOffsetDateTime())
           .setDurationSeconds(workedTimeSeconds)
           .setChargeableTimeSeconds(chargeableTimeSeconds);
 
@@ -280,61 +269,6 @@ public class SqlTimePostConnector implements WiseTimeConnector {
 
   private ZoneId getTimeZoneId() {
     return ZoneId.of(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TIMEZONE).orElse("UTC"));
-  }
-
-  @VisibleForTesting
-  TimeGroup convertToZone(TimeGroup timeGroupUtc, ZoneId zoneId) {
-    try {
-      final String timeGroupUtcJson = OBJECT_MAPPER.writeValueAsString(timeGroupUtc);
-      final TimeGroup timeGroupCopy = OBJECT_MAPPER.readValue(timeGroupUtcJson, TimeGroup.class);
-      timeGroupCopy.getTimeRows()
-          .forEach(tr -> convertToZone(tr, zoneId));
-      return timeGroupCopy;
-    } catch (IOException ex) {
-      throw new RuntimeException("Failed to convert TimeGroup to zone " + zoneId, ex);
-    }
-  }
-
-  private void convertToZone(TimeRow timeRowUtc, ZoneId zoneId) {
-    final Pair<Integer, Integer> activityTimePair = convertToZone(
-        timeRowUtc.getActivityHour(), timeRowUtc.getFirstObservedInHour(), zoneId
-    );
-
-    timeRowUtc
-        .activityHour(activityTimePair.getLeft())
-        .firstObservedInHour(activityTimePair.getRight())
-        .setSubmittedDate(convertToZone(timeRowUtc.getSubmittedDate(), zoneId));
-  }
-
-  /**
-   * Returns a Pair of "activity hour" (left value) and "first observed in hour" (right value) converted
-   * in the specified zone ID.
-   */
-  private Pair<Integer, Integer> convertToZone(int activityHourUtc, int firstObservedInHourUtc, ZoneId toZoneId) {
-    final DateTimeFormatter activityTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-    final String activityTimeUTC = activityHourUtc + StringUtils.leftPad(String.valueOf(firstObservedInHourUtc), 2, "0");
-    final String activityTimeConverted = ZonedDateTime
-        .of(LocalDateTime.parse(activityTimeUTC, activityTimeFormatter), ZoneOffset.UTC)
-        .withZoneSameInstant(toZoneId)
-        .format(activityTimeFormatter);
-
-    return Pair.of(
-        Integer.parseInt(activityTimeConverted.substring(0, 10)), // activityHour in 'yyyyMMddHH' format
-        Integer.parseInt(activityTimeConverted.substring(10))     // firstObservedInHour in 'mm' format
-    );
-  }
-
-  private Long convertToZone(long submittedDateUtc, ZoneId toZoneId) {
-    DateTimeFormatter submittedDateFormatter = new DateTimeFormatterBuilder()
-        .appendPattern("yyyyMMddHHmmss")
-        .appendValue(ChronoField.MILLI_OF_SECOND, 3)
-        .toFormatter();
-    final String submittedDateConverted = ZonedDateTime
-        .of(LocalDateTime.parse(String.valueOf(submittedDateUtc), submittedDateFormatter), ZoneOffset.UTC)
-        .withZoneSameInstant(toZoneId)
-        .format(submittedDateFormatter);
-
-    return Long.parseLong(submittedDateConverted);
   }
 
   private static class MatterNotFoundException extends RuntimeException {
