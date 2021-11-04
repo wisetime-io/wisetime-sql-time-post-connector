@@ -95,7 +95,7 @@ public class PlainSqlServer implements ContainerDefinition {
   }
 
   public String getPassword() {
-    return "Str0ng#Passw#rd123";
+    return "A_Str0ng_Required_Password";
   }
 
   public String getUsername() {
