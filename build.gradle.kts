@@ -22,7 +22,7 @@ plugins {
   id("com.google.cloud.tools.jib") version "3.1.2"
   id("com.github.ben-manes.versions") version "0.38.0"
   id("io.wisetime.versionChecker") version "10.11.80"
-  id("io.freefair.lombok") version "6.2.0"
+  id("io.freefair.lombok") version "6.3.0"
 }
 
 apply(from = "$rootDir/gradle/conf/checkstyle.gradle")
