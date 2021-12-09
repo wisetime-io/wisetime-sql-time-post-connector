@@ -21,7 +21,7 @@ plugins {
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
   id("com.google.cloud.tools.jib") version "3.1.2"
   id("com.github.ben-manes.versions") version "0.38.0"
-  id("io.wisetime.versionChecker") version "10.11.80"
+  id("io.wisetime.versionChecker") version "10.11.84"
   id("io.freefair.lombok") version "6.3.0"
 }
 
@@ -127,6 +127,8 @@ configurations.all {
       }
     }
     force("org.slf4j:jcl-over-slf4j:${io.wisetime.version.model.LegebuildConst.SLF4J}")
+    force("org.slf4j:slf4j-api:${io.wisetime.version.model.LegebuildConst.SLF4J}")
+    force("commons-codec:commons-codec:1.14")
   }
 }
 
