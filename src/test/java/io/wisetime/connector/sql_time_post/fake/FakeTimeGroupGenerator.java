@@ -56,6 +56,7 @@ public class FakeTimeGroupGenerator {
     return new Tag()
         .path(tagUpsertPath)
         .name(name)
+        .externalId(FAKER.numerify("externalId-#####"))
         .description(FAKER.lorem().characters(30, 200));
   }
 

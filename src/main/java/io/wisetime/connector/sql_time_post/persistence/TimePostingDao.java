@@ -50,6 +50,12 @@ public class TimePostingDao {
         .firstResult(Mappers.singleString());
   }
 
+  public Optional<String> findMatterIdByExternalId(String externalId) {
+    return query().select(queries.getFindMatterIdByTagNameSql())
+        .namedParam("externalId", externalId)
+        .firstResult(Mappers.singleString());
+  }
+
   public boolean doesActivityCodeExist(String activityCode) {
     try {
       return query().select(queries.getDoesActivityCodeExistSql())

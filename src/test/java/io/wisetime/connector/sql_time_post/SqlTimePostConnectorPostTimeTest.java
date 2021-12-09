@@ -231,6 +231,42 @@ class SqlTimePostConnectorPostTimeTest {
     when(postTimeDaoMock.doesActivityCodeExist(any()))
         .thenReturn(true);
 
+    when(postTimeDaoMock.findMatterIdByExternalId(any()))
+        .thenReturn(Optional.of("123"));
+
+    assertThat(connector.postTime(timeGroup).getStatus())
+        .isEqualTo(PostResultStatus.SUCCESS);
+
+    verify(postTimeDaoMock, times(1)).findMatterIdByExternalId(anyString());
+    verify(postTimeDaoMock, never()).findMatterIdByTagName(any());
+
+    ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
+    verify(postTimeDaoMock, times(1)).createWorklog(worklogCaptor.capture());
+
+    List<Worklog> createdWorklogs = worklogCaptor.getAllValues();
+
+    assertThat(createdWorklogs)
+        .hasSize(1);
+    assertThat(createdWorklogs.get(0).getMatterId())
+        .isEqualTo("123");
+  }
+
+  @Test
+  void postTime_create_worklog_for_each_valid_tag_search_by_tag_name() {
+    final Tag existentCaseTag = fakeGenerator.randomTag(TAG_UPSERT_PATH, "tag1");
+
+    final TimeGroup timeGroup = fakeGenerator.randomTimeGroup(DEFAULT_ACTIVITY_CODE)
+        .tags(Collections.singletonList(existentCaseTag));
+
+    when(postTimeDaoMock.findUserId(any()))
+        .thenReturn(Optional.of("123"));
+
+    when(postTimeDaoMock.doesActivityCodeExist(any()))
+        .thenReturn(true);
+
+    when(postTimeDaoMock.findMatterIdByExternalId(any()))
+        .thenReturn(Optional.empty());
+
     when(postTimeDaoMock.findMatterIdByTagName(existentCaseTag.getName()))
         .thenReturn(Optional.of("123"));
 
