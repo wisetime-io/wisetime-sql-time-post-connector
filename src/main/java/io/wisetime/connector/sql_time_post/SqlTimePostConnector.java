@@ -217,7 +217,9 @@ public class SqlTimePostConnector implements WiseTimeConnector {
           tag.getName());
       return Optional.empty();
     }
-    final Optional<String> tagId = postTimeDao.findMatterIdByTagName(tag.getName());
+    final Optional<String> tagId = postTimeDao.findMatterIdByExternalId(tag.getExternalId())
+        .or(() -> postTimeDao.findMatterIdByTagName(tag.getName()));
+
     if (tagId.isPresent()) {
       return tagId;
     }

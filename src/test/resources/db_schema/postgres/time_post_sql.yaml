@@ -11,6 +11,9 @@ doesActivityCodeExistSql: >
 findMatterIdByTagNameSql: >
   SELECT CASEID
   FROM CASES WHERE irn = :tagName;
+findMatterIdByExternalIdSql: >
+  SELECT caseid
+  FROM cases c WHERE c.caseid = :externalId;
 findUserIdSql: >
   SELECT NAMENO AS ID
   FROM USERIDENTITY

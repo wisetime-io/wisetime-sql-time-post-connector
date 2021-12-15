@@ -13,6 +13,9 @@ doesActivityCodeExistSql: >
 findMatterIdByTagNameSql: >
   SELECT caseid
   FROM cases c WHERE c.irn = :tagName;
+findMatterIdByExternalIdSql: >
+  SELECT caseid
+  FROM cases c WHERE c.caseid = :externalId;
 findUserIdSql: >
   SELECT ID
   FROM V_rcw_ListEmployee

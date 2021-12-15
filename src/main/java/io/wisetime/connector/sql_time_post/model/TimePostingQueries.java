@@ -18,4 +18,5 @@ public class TimePostingQueries {
   private String doesActivityCodeExistSql;
   private String findMatterIdByTagNameSql;
   private String findUserIdSql;
+  private String findMatterIdByExternalIdSql;
 }
