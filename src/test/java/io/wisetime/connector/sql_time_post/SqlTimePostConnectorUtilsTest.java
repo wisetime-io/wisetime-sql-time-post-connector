@@ -33,10 +33,10 @@ class SqlTimePostConnectorUtilsTest {
     ));
     final Set<String> modifiers = connector.getTimeGroupActivityCodes(timeGroup);
     assertThat(modifiers)
-        .as("should not contain any duplicates")
-        .hasSize(3);
+        .as("should not contain any duplicates nor null/empty values")
+        .hasSize(2);
     assertThat(modifiers)
         .as("should contain all distinct values")
-        .contains(activityType1, activityType2, activityType3);
+        .contains(activityType1, activityType3);
   }
 }

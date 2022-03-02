@@ -12,28 +12,29 @@ In order to use the WiseTime SQL Post Time Connector, you will need a [WiseTime 
 
 Configuration is done through environment variables. The following configuration options are required.
 
-| Environment Variable               | Description                                                                                                             |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| API_KEY                            | Your WiseTime Connect API Key                                                                                           |
-| JDBC_URL                           | The JDBC URL for your database                                                                                          |
-| DB_USER                            | Username to use to connect to the database                                                                              |
-| DB_PASSWORD                        | Password to use to connect to the database                                                                              |
-| NARRATIVE_PATH                     | Path to the narrative formatter template. This is used to provide information about posted time to be used on invoices. |
-| TIME_POST_SQL_PATH                 | Path to yaml file containing all required time posting queries                                                          |
-| TAG_UPSERT_PATH                    | The WiseTime tag upload folder, must be set to the same value as in your tag sync connector                             |
+| Environment Variable | Description                                                                                                             |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------|
+| API_KEY              | Your WiseTime Connect API Key                                                                                           |
+| JDBC_URL             | The JDBC URL for your database                                                                                          |
+| DB_USER              | Username to use to connect to the database                                                                              |
+| DB_PASSWORD          | Password to use to connect to the database                                                                              |
+| NARRATIVE_PATH       | Path to the narrative formatter template. This is used to provide information about posted time to be used on invoices. |
+| TIME_POST_SQL_PATH   | Path to yaml file containing all required time posting queries                                                          |
+| TAG_UPSERT_PATH      | The WiseTime tag upload folder, must be set to the same value as in your tag sync connector                             |
 
 
 The following configuration options are optional.
 
-| Environment Variable      | Description                                                                                                                                                                                                                                    |
-| ------------------------- | -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CALLER_KEY                | The caller key that WiseTime should provide with post time webhook calls. The connector does not authenticate Webhook calls if not set.                                                                                                        |
-| DATA_DIR                  | If set, the connector will use the directory as the location for storing data to keep track of the already posted time. By default, WiseTime Connector will create a temporary dir under `/tmp` as its data storage.                           |
-| RECEIVE_POSTED_TIME       | If unset, this defaults to `LONG_POLL`: use long polling to fetch posted time. Optional parameters are `WEBHOOK` to start up a server to listen for posted time. `DISABLED` no handling for posted time                                        |
-| WEBHOOK_PORT              | The connector will listen to this port e.g. 8090, if RECEIVE_POSTED_TIME is set to `WEBHOOK`. Defaults to 8080.                                                                                                                                |                                                                                                                
-| LOG_LEVEL                 | Define log level. Available values are: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` and `OFF`. Default is `INFO`.                                                                                                                                |
-| TIMEZONE                  | The timezone to use when posting time, e.g. `Australia/Perth`. Defaults to `UTC`.                                                                                                                                                              |
-| NARRATIVE_INTERNAL_PATH   | Path to the internal narrative formatter template. This is optional and can be used to provide additional information about posted time for internal use                                                                                       |
+| Environment Variable        | Description                                                                                                                                                                                                          |
+|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CALLER_KEY                  | The caller key that WiseTime should provide with post time webhook calls. The connector does not authenticate Webhook calls if not set.                                                                              |
+| DATA_DIR                    | If set, the connector will use the directory as the location for storing data to keep track of the already posted time. By default, WiseTime Connector will create a temporary dir under `/tmp` as its data storage. |
+| RECEIVE_POSTED_TIME         | If unset, this defaults to `LONG_POLL`: use long polling to fetch posted time. Optional parameters are `WEBHOOK` to start up a server to listen for posted time. `DISABLED` no handling for posted time              |
+| WEBHOOK_PORT                | The connector will listen to this port e.g. 8090, if RECEIVE_POSTED_TIME is set to `WEBHOOK`. Defaults to 8080.                                                                                                      |                                                                                                                
+| LOG_LEVEL                   | Define log level. Available values are: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` and `OFF`. Default is `INFO`.                                                                                                      |
+| TIMEZONE                    | The timezone to use when posting time, e.g. `Australia/Perth`. Defaults to `UTC`.                                                                                                                                    |
+| NARRATIVE_INTERNAL_PATH     | Path to the internal narrative formatter template. This is optional and can be used to provide additional information about posted time for internal use                                                             |
+| ACTIVITY_TYPE_MANDATORY     | Are activity types mandatory for posting time? Defaults to `true`                                                                                                                                                    |
 
 ### Post Time Queries
 

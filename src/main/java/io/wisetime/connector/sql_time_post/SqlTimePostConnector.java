@@ -136,7 +136,7 @@ public class SqlTimePostConnector implements WiseTimeConnector {
     }
 
     final Optional<String> activityCode = getTimeGroupActivityCode(timeGroup);
-    if (activityCode.isEmpty()) {
+    if (isActivityTypeMandatory() && activityCode.isEmpty()) {
       return PostResult.PERMANENT_FAILURE().withMessage("Time group has an invalid activity code");
     }
 
@@ -157,11 +157,11 @@ public class SqlTimePostConnector implements WiseTimeConnector {
       final Worklog worklog = new Worklog()
           .setMatterId(matterId)
           .setUserId(userId.get())
-          .setActivityCode(activityCode.get())
           .setNarrative(narrative)
           .setStartTime(activityStartTime.get().atZone(getTimeZoneId()).toOffsetDateTime())
           .setDurationSeconds(workedTimeSeconds)
           .setChargeableTimeSeconds(chargeableTimeSeconds);
+      activityCode.ifPresent(worklog::setActivityCode);
 
       narrativeInternal.ifPresent(worklog::setNarrativeInternal);
 
@@ -230,6 +230,7 @@ public class SqlTimePostConnector implements WiseTimeConnector {
   Set<String> getTimeGroupActivityCodes(final TimeGroup timeGroup) {
     return timeGroup.getTimeRows().stream()
         .map(TimeRow::getActivityTypeCode)
+        .filter(StringUtils::isNotBlank)
         .collect(Collectors.toSet());
   }
 
@@ -271,6 +272,10 @@ public class SqlTimePostConnector implements WiseTimeConnector {
 
   private ZoneId getTimeZoneId() {
     return ZoneId.of(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TIMEZONE).orElse("UTC"));
+  }
+
+  private boolean isActivityTypeMandatory() {
+    return RuntimeConfig.getBoolean(SqlPostTimeConnectorConfigKey.ACTIVITY_TYPE_MANDATORY).orElse(true);
   }
 
   private static class MatterNotFoundException extends RuntimeException {

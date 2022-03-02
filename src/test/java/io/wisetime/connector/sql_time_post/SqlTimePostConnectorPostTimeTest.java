@@ -7,6 +7,7 @@ package io.wisetime.connector.sql_time_post;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.github.javafaker.Faker;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -163,7 +165,8 @@ class SqlTimePostConnectorPostTimeTest {
   }
 
   @Test
-  void postTime_nonexistent_activity_code_should_fail() {
+  void postTime_nonexistent_and_mandatory_activity_code_should_fail() {
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.ACTIVITY_TYPE_MANDATORY, "true");
     final TimeGroup timeGroup = fakeGenerator.randomTimeGroup(DEFAULT_ACTIVITY_CODE);
     timeGroup.getTags()
         .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
@@ -179,6 +182,7 @@ class SqlTimePostConnectorPostTimeTest {
 
     verify(postTimeDaoMock, times(1)).doesActivityCodeExist(any());
     verify(postTimeDaoMock, never()).createWorklog(any(Worklog.class));
+    RuntimeConfig.clearProperty(SqlPostTimeConnectorConfigKey.ACTIVITY_TYPE_MANDATORY);
   }
 
   @Test
@@ -216,6 +220,43 @@ class SqlTimePostConnectorPostTimeTest {
 
     assertThat(connector.postTime(timeGroup).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
+  }
+
+  @Test
+  void postTime_no_activity_type_not_mandatory_should_succeed() {
+    RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.ACTIVITY_TYPE_MANDATORY, "false");
+    final Tag existentCaseTag = fakeGenerator.randomTag(TAG_UPSERT_PATH, Faker.instance().numerify("tag_######"));
+
+    // no activity type
+    final TimeGroup timeGroup = fakeGenerator.randomTimeGroup(null)
+        .tags(Collections.singletonList(existentCaseTag));
+
+    when(postTimeDaoMock.findUserId(any()))
+        .thenReturn(Optional.of(Faker.instance().numerify("userId_######")));
+
+    when(postTimeDaoMock.doesActivityCodeExist(any()))
+        .thenReturn(false);
+
+    String matterId = timeGroup.getTags().get(0).getExternalId();
+    when(postTimeDaoMock.findMatterIdByExternalId(any()))
+        .thenReturn(Optional.of(matterId));
+
+    assertThat(connector.postTime(timeGroup).getStatus())
+        .isEqualTo(PostResultStatus.SUCCESS);
+
+    verify(postTimeDaoMock, times(1)).findMatterIdByExternalId(eq(matterId));
+    verify(postTimeDaoMock, never()).findMatterIdByTagName(any());
+
+    ArgumentCaptor<Worklog> worklogCaptor = ArgumentCaptor.forClass(Worklog.class);
+    verify(postTimeDaoMock, times(1)).createWorklog(worklogCaptor.capture());
+
+    List<Worklog> createdWorklogs = worklogCaptor.getAllValues();
+
+    assertThat(createdWorklogs)
+        .hasSize(1);
+    assertThat(createdWorklogs.get(0).getMatterId())
+        .isEqualTo(matterId);
+    RuntimeConfig.clearProperty(SqlPostTimeConnectorConfigKey.ACTIVITY_TYPE_MANDATORY);
   }
 
   @Test

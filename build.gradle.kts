@@ -1,3 +1,5 @@
+import io.wisetime.version.model.LegebuildConst
+
 /*
  * Copyright (c) 2019 Practice Insight Pty Ltd. All Rights Reserved.
  */
@@ -21,7 +23,7 @@ plugins {
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
   id("com.google.cloud.tools.jib") version "3.1.2"
   id("com.github.ben-manes.versions") version "0.38.0"
-  id("io.wisetime.versionChecker") version "10.11.84"
+  id("io.wisetime.versionChecker") version "10.12.5"
   id("io.freefair.lombok") version "6.3.0"
 }
 
@@ -85,14 +87,14 @@ if (gradle.startParameter.taskRequests.toString().contains("dependencyUpdates"))
 }
 
 dependencies {
-  implementation("io.wisetime:wisetime-connector:4.1.5")
+  implementation("io.wisetime:wisetime-connector:4.1.20")
 
-  implementation("com.google.inject:guice:5.0.1") {
+  implementation("com.google.inject:guice:${LegebuildConst.GUICE_VERSION}") {
     exclude(group = "com.google.guava", module = "guava")
   }
-  implementation("com.google.guava:guava:30.1-jre")
-  implementation("com.fasterxml.jackson.core:jackson-databind:${io.wisetime.version.model.LegebuildConst.JACKSON_FASTER}")
-  implementation("org.apache.commons:commons-lang3:${io.wisetime.version.model.LegebuildConst.COMMONS_LANG3}")
+  implementation("com.google.guava:guava:${LegebuildConst.GUAVA_VERSION}")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${LegebuildConst.JACKSON_FASTER}")
+  implementation("org.apache.commons:commons-lang3:${LegebuildConst.COMMONS_LANG3}")
 
   implementation("org.codejargon:fluentjdbc:1.8.6")
   implementation("com.zaxxer:HikariCP:3.3.1")
@@ -111,23 +113,27 @@ dependencies {
   testImplementation("com.github.javafaker:javafaker:0.17.2") {
     exclude(group = "org.apache.commons", module = "commons-lang3")
   }
-  testImplementation("io.wisetime:wisetime-test-support:${io.wisetime.version.model.LegebuildConst.WT_TEST_SUPPORT}")
+  testImplementation("io.wisetime:wisetime-test-support:${LegebuildConst.WT_TEST_SUPPORT}")
 }
 
 configurations.all {
   resolutionStrategy {
     eachDependency {
       if (requested.group == "com.fasterxml.jackson.core") {
-        useVersion("2.12.3")
+        useVersion(LegebuildConst.JACKSON_FASTER)
+        because("use consistent version for all transitive dependencies")
+      }
+      if (requested.group == "joda-time" && requested.name == "joda-time") {
+        useVersion(LegebuildConst.JODA_TIME)
         because("use consistent version for all transitive dependencies")
       }
       if (requested.name == "commons-lang3") {
-        useVersion("3.12.0")
+        useVersion(LegebuildConst.COMMONS_LANG3)
         because("use consistent version for all transitive dependencies")
       }
     }
-    force("org.slf4j:jcl-over-slf4j:${io.wisetime.version.model.LegebuildConst.SLF4J}")
-    force("org.slf4j:slf4j-api:${io.wisetime.version.model.LegebuildConst.SLF4J}")
+    force("org.slf4j:jcl-over-slf4j:${LegebuildConst.SLF4J}")
+    force("org.slf4j:slf4j-api:${LegebuildConst.SLF4J}")
     force("commons-codec:commons-codec:1.14")
   }
 }
