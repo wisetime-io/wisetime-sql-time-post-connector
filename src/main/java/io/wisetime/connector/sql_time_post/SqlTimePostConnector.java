@@ -135,9 +135,23 @@ public class SqlTimePostConnector implements WiseTimeConnector {
       return PostResult.PERMANENT_FAILURE().withMessage("User does not exist in the connected system.");
     }
 
-    final Optional<String> activityCode = getTimeGroupActivityCode(timeGroup);
-    if (isActivityTypeMandatory() && activityCode.isEmpty()) {
-      return PostResult.PERMANENT_FAILURE().withMessage("Time group has an invalid activity code");
+    final Set<String> activityCodes = getTimeGroupActivityCodes(timeGroup);
+    if (activityCodes.size() > 1) {
+      // This should never happen as we only allow one activity type per time group in the frontend
+      // Therefore the additional error log to better identify the issue
+      // additionally providing better feedback as this situation may be fixable by the user
+      log.error("All time logs within time group should have same activity type, but got: {}", activityCodes);
+      return PostResult.PERMANENT_FAILURE().withMessage("Time group has multiple activity types assigned, "
+          + "only one activity type per time group is supported.");
+    }
+    if (isActivityTypeMandatory() && activityCodes.isEmpty()) {
+      return PostResult.PERMANENT_FAILURE().withMessage("Time group has no activity type assigned, "
+          + "but activity types are mandatory.");
+    }
+    Optional<String> activityCode = activityCodes.stream().findFirst();
+    if (activityCode.isPresent() && !verifyActivityCode(activityCode.get())) {
+      return PostResult.PERMANENT_FAILURE().withMessage("The activity type of the Time Group could not be"
+          + " verified in the external system.");
     }
 
     final String narrative = narrativeFormatter.format(timeGroup);
@@ -226,6 +240,12 @@ public class SqlTimePostConnector implements WiseTimeConnector {
     throw new MatterNotFoundException("Can't find matter for tag " + tag.getName());
   };
 
+  private String tagUpsertPath() {
+    return RuntimeConfig
+        .getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH)
+        .orElseThrow(() -> new IllegalArgumentException("TAG_UPSERT_PATH needs to be set"));
+  }
+
   @VisibleForTesting
   Set<String> getTimeGroupActivityCodes(final TimeGroup timeGroup) {
     return timeGroup.getTimeRows().stream()
@@ -234,30 +254,8 @@ public class SqlTimePostConnector implements WiseTimeConnector {
         .collect(Collectors.toSet());
   }
 
-  private String tagUpsertPath() {
-    return RuntimeConfig
-        .getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH)
-        .orElseThrow(() -> new IllegalArgumentException("TAG_UPSERT_PATH needs to be set"));
-  }
-
-  private Optional<String> getTimeGroupActivityCode(final TimeGroup timeGroup) {
-    final Set<String> activityCodes = getTimeGroupActivityCodes(timeGroup);
-    if (activityCodes.size() > 1) {
-      log.error("All time logs within time group should have same activity type, but got: {}", activityCodes);
-      return Optional.empty();
-    }
-    if (activityCodes.isEmpty()) {
-      log.warn("Activity type is not set for time group {}", timeGroup.getGroupId());
-      return Optional.empty();
-    }
-
-    final String activityType = activityCodes.iterator().next();
-
-    if (postTimeDao.doesActivityCodeExist(activityType)) {
-      return Optional.of(activityType);
-    }
-
-    return Optional.empty();
+  private boolean verifyActivityCode(final String activityCode) {
+    return postTimeDao.doesActivityCodeExist(activityCode);
   }
 
   @Override
