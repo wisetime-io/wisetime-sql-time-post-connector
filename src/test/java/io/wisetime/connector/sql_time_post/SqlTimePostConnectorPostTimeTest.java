@@ -209,7 +209,7 @@ class SqlTimePostConnectorPostTimeTest {
   }
 
   @Test
-  void postTime_invalid_activity_code_should_non_mandatory() {
+  void postTime_invalid_activity_code_should_fail_even_if_non_mandatory() {
     RuntimeConfig.setProperty(SqlPostTimeConnectorConfigKey.ACTIVITY_TYPE_MANDATORY, "false");
     final TimeGroup timeGroup = fakeGenerator.randomTimeGroup(DEFAULT_ACTIVITY_CODE);
     timeGroup.getTags()
