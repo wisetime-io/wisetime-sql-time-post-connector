@@ -135,9 +135,23 @@ public class SqlTimePostConnector implements WiseTimeConnector {
       return PostResult.PERMANENT_FAILURE().withMessage("User does not exist in the connected system.");
     }
 
-    final Optional<String> activityCode = getTimeGroupActivityCode(timeGroup);
-    if (activityCode.isEmpty()) {
-      return PostResult.PERMANENT_FAILURE().withMessage("Time group has an invalid activity code");
+    final Set<String> activityCodes = getTimeGroupActivityCodes(timeGroup);
+    if (activityCodes.size() > 1) {
+      // This should never happen as we only allow one activity type per time group in the frontend
+      // Therefore the additional error log to better identify the issue
+      // additionally providing better feedback as this situation may be fixable by the user
+      log.error("All time logs within time group should have same activity type, but got: {}", activityCodes);
+      return PostResult.PERMANENT_FAILURE().withMessage("Time group has multiple activity types assigned, "
+          + "only one activity type per time group is supported.");
+    }
+    if (isActivityTypeMandatory() && activityCodes.isEmpty()) {
+      return PostResult.PERMANENT_FAILURE().withMessage("Time group has no activity type assigned, "
+          + "but activity types are mandatory.");
+    }
+    Optional<String> activityCode = activityCodes.stream().findFirst();
+    if (activityCode.isPresent() && !verifyActivityCode(activityCode.get())) {
+      return PostResult.PERMANENT_FAILURE().withMessage("The activity type of the Time Group could not be"
+          + " verified in the external system.");
     }
 
     final String narrative = narrativeFormatter.format(timeGroup);
@@ -157,11 +171,11 @@ public class SqlTimePostConnector implements WiseTimeConnector {
       final Worklog worklog = new Worklog()
           .setMatterId(matterId)
           .setUserId(userId.get())
-          .setActivityCode(activityCode.get())
           .setNarrative(narrative)
           .setStartTime(activityStartTime.get().atZone(getTimeZoneId()).toOffsetDateTime())
           .setDurationSeconds(workedTimeSeconds)
           .setChargeableTimeSeconds(chargeableTimeSeconds);
+      activityCode.ifPresent(worklog::setActivityCode);
 
       narrativeInternal.ifPresent(worklog::setNarrativeInternal);
 
@@ -226,37 +240,22 @@ public class SqlTimePostConnector implements WiseTimeConnector {
     throw new MatterNotFoundException("Can't find matter for tag " + tag.getName());
   };
 
-  @VisibleForTesting
-  Set<String> getTimeGroupActivityCodes(final TimeGroup timeGroup) {
-    return timeGroup.getTimeRows().stream()
-        .map(TimeRow::getActivityTypeCode)
-        .collect(Collectors.toSet());
-  }
-
   private String tagUpsertPath() {
     return RuntimeConfig
         .getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH)
         .orElseThrow(() -> new IllegalArgumentException("TAG_UPSERT_PATH needs to be set"));
   }
 
-  private Optional<String> getTimeGroupActivityCode(final TimeGroup timeGroup) {
-    final Set<String> activityCodes = getTimeGroupActivityCodes(timeGroup);
-    if (activityCodes.size() > 1) {
-      log.error("All time logs within time group should have same activity type, but got: {}", activityCodes);
-      return Optional.empty();
-    }
-    if (activityCodes.isEmpty()) {
-      log.warn("Activity type is not set for time group {}", timeGroup.getGroupId());
-      return Optional.empty();
-    }
+  @VisibleForTesting
+  Set<String> getTimeGroupActivityCodes(final TimeGroup timeGroup) {
+    return timeGroup.getTimeRows().stream()
+        .map(TimeRow::getActivityTypeCode)
+        .filter(StringUtils::isNotBlank)
+        .collect(Collectors.toSet());
+  }
 
-    final String activityType = activityCodes.iterator().next();
-
-    if (postTimeDao.doesActivityCodeExist(activityType)) {
-      return Optional.of(activityType);
-    }
-
-    return Optional.empty();
+  private boolean verifyActivityCode(final String activityCode) {
+    return postTimeDao.doesActivityCodeExist(activityCode);
   }
 
   @Override
@@ -271,6 +270,10 @@ public class SqlTimePostConnector implements WiseTimeConnector {
 
   private ZoneId getTimeZoneId() {
     return ZoneId.of(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TIMEZONE).orElse("UTC"));
+  }
+
+  private boolean isActivityTypeMandatory() {
+    return RuntimeConfig.getBoolean(SqlPostTimeConnectorConfigKey.ACTIVITY_TYPE_MANDATORY).orElse(true);
   }
 
   private static class MatterNotFoundException extends RuntimeException {
