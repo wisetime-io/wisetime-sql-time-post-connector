@@ -1,12 +1,15 @@
 pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        google()
-        maven {
-            url 'https://s3.eu-central-1.amazonaws.com/artifacts.wisetime.com/mvn2/plugins'
-            content {
-                includeGroup 'io.wisetime.versionChecker'
-            }
-        }
+  plugins {
+    id("io.wisetime.versionChecker") version "10.12.26"
+  }
+  repositories {
+    gradlePluginPortal()
+    google()
+    maven {
+      url 'https://s3.eu-central-1.amazonaws.com/artifacts.wisetime.com/mvn2/plugins'
+      content {
+        includeGroup 'io.wisetime.versionChecker'
+      }
     }
+  }
 }

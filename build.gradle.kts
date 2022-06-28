@@ -21,10 +21,10 @@ plugins {
   java
   idea
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
-  id("com.google.cloud.tools.jib") version "3.1.2"
-  id("com.github.ben-manes.versions") version "0.38.0"
-  id("io.wisetime.versionChecker") version "10.12.5"
-  id("io.freefair.lombok") version "6.3.0"
+  id("com.google.cloud.tools.jib") version "3.2.1"
+  id("com.github.ben-manes.versions") version "0.39.0"
+  id("io.wisetime.versionChecker")
+  id("io.freefair.lombok") version "6.4.1"
 }
 
 apply(from = "$rootDir/gradle/conf/checkstyle.gradle")
