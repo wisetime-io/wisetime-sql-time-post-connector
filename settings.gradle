@@ -1,6 +1,6 @@
 pluginManagement {
   plugins {
-    id("io.wisetime.versionChecker") version "10.12.58"
+    id("io.wisetime.versionChecker") version "10.12.59"
   }
   repositories {
     gradlePluginPortal()
