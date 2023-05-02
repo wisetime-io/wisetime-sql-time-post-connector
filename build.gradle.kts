@@ -31,11 +31,8 @@ apply(from = "$rootDir/gradle/conf/checkstyle.gradle")
 apply(from = "$rootDir/gradle/conf/jacoco.gradle")
 
 java {
-  toolchain {
-    languageVersion.set(JavaLanguageVersion.of(11))
-    vendor.set(JvmVendorSpec.ADOPTOPENJDK)
-    implementation.set(JvmImplementation.J9)
-  }
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
   consistentResolution {
     useCompileClasspathVersions()
   }
