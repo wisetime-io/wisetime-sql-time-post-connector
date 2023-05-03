@@ -21,21 +21,18 @@ plugins {
   java
   idea
   id("fr.brouillard.oss.gradle.jgitver") version "0.9.1"
-  id("com.google.cloud.tools.jib") version "3.2.1"
-  id("com.github.ben-manes.versions") version "0.39.0"
+  id("com.google.cloud.tools.jib") version "3.3.1"
+  id("com.github.ben-manes.versions") version "0.46.0"
   id("io.wisetime.versionChecker")
-  id("io.freefair.lombok") version "6.4.1"
+  id("io.freefair.lombok") version "8.0.1"
 }
 
 apply(from = "$rootDir/gradle/conf/checkstyle.gradle")
 apply(from = "$rootDir/gradle/conf/jacoco.gradle")
 
 java {
-  toolchain {
-    languageVersion.set(JavaLanguageVersion.of(11))
-    vendor.set(JvmVendorSpec.ADOPTOPENJDK)
-    implementation.set(JvmImplementation.J9)
-  }
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
   consistentResolution {
     useCompileClasspathVersions()
   }
@@ -87,7 +84,7 @@ if (gradle.startParameter.taskRequests.toString().contains("dependencyUpdates"))
 }
 
 dependencies {
-  implementation("io.wisetime:wisetime-connector:4.1.20")
+  implementation("io.wisetime:wisetime-connector:5.0.36")
 
   implementation("com.google.inject:guice:${LegebuildConst.GUICE_VERSION}") {
     exclude(group = "com.google.guava", module = "guava")
@@ -97,16 +94,16 @@ dependencies {
   implementation("org.apache.commons:commons-lang3:${LegebuildConst.COMMONS_LANG3}")
 
   implementation("org.codejargon:fluentjdbc:1.8.6")
-  implementation("com.zaxxer:HikariCP:3.3.1")
+  implementation("com.zaxxer:HikariCP:5.0.1")
   implementation("com.microsoft.sqlserver:mssql-jdbc:6.4.0.jre8")
-  implementation("mysql:mysql-connector-java:8.0.21") {
+  implementation("mysql:mysql-connector-java:8.0.33") {
     exclude(group = "com.google.protobuf", module = "protobuf-java")
   }
-  implementation("org.postgresql:postgresql:42.2.16")
+  implementation("org.postgresql:postgresql:42.6.0")
 
   implementation("org.yaml:snakeyaml:1.24")
 
-  testImplementation("org.junit.jupiter:junit-jupiter:5.4.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")
   testImplementation("org.mockito:mockito-core:2.27.0")
   testImplementation("org.assertj:assertj-core:3.12.2")
   testImplementation("org.flywaydb:flyway-core:7.5.4")
