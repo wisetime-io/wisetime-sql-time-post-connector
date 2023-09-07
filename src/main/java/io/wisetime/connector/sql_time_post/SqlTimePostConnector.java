@@ -123,7 +123,7 @@ public class SqlTimePostConnector implements WiseTimeConnector {
 
     final Optional<Instant> activityStartTime = ActivityTimeCalculator.startInstant(timeGroup);
     if (activityStartTime.isEmpty()) {
-      return PostResult.PERMANENT_FAILURE().withMessage("Cannot post time group with no time rows");
+      return PostResult.PERMANENT_FAILURE().withMessage("Activity time not found.");
     }
 
     final String emailOrExternalId = StringUtils.isNotBlank(timeGroup.getUser().getExternalId())
@@ -248,6 +248,10 @@ public class SqlTimePostConnector implements WiseTimeConnector {
 
   @VisibleForTesting
   Set<String> getTimeGroupActivityCodes(final TimeGroup timeGroup) {
+    if (timeGroup.getActivityType() != null) {
+      return Set.of(timeGroup.getActivityType().getCode());
+    }
+    log.warn("time group did not set activity group object, falling back to checking time rows...");
     return timeGroup.getTimeRows().stream()
         .map(TimeRow::getActivityTypeCode)
         .filter(StringUtils::isNotBlank)
