@@ -31,11 +31,8 @@ apply(from = "$rootDir/gradle/conf/checkstyle.gradle")
 apply(from = "$rootDir/gradle/conf/jacoco.gradle")
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-  consistentResolution {
-    useCompileClasspathVersions()
-  }
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
 }
 
 group = "io.wisetime"
@@ -47,7 +44,7 @@ jib {
     jvmFlags = listOf("-server", "-Djava.awt.headless=true")
   }
   from {
-    image = "gcr.io/wise-pub/connect-java-11-j9@sha256:98ec5f00539bdffeb678c3b4a34c07c77e4431395286ecc6a083298089b3d0ec"
+    image = "europe-west3-docker.pkg.dev/wise-pub/tools/jdk/jdk-17:17.0.7.slim"
   }
   to {
     project.afterEvaluate { // <-- so we evaluate version after it has been set
@@ -84,7 +81,7 @@ if (gradle.startParameter.taskRequests.toString().contains("dependencyUpdates"))
 }
 
 dependencies {
-  implementation("io.wisetime:wisetime-connector:5.0.36")
+  implementation("io.wisetime:wisetime-connector:5.1.6")
 
   implementation("com.google.inject:guice:${LegebuildConst.GUICE_VERSION}") {
     exclude(group = "com.google.guava", module = "guava")

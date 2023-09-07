@@ -31,10 +31,12 @@ import io.wisetime.connector.sql_time_post.ConnectorLauncher.SqlPostTimeConnecto
 import io.wisetime.connector.sql_time_post.fake.FakeTimeGroupGenerator;
 import io.wisetime.connector.sql_time_post.model.Worklog;
 import io.wisetime.connector.sql_time_post.persistence.TimePostingDao;
+import io.wisetime.generated.connect.GroupActivityType;
 import io.wisetime.generated.connect.Tag;
 import io.wisetime.generated.connect.TimeGroup;
 import io.wisetime.generated.connect.TimeRow;
 import io.wisetime.generated.connect.User;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -101,15 +103,29 @@ class SqlTimePostConnectorPostTimeTest {
   }
 
   @Test
-  void postTime_without_time_rows_should_fail() {
-    final TimeGroup groupWithNoTimeRows = fakeGenerator.randomTimeGroup().timeRows(ImmutableList.of());
+  void postTime_without_time_rows_should_succeed() {
+    final TimeGroup groupWithNoTimeRows = fakeGenerator.randomTimeGroup()
+        .timeRows(ImmutableList.of())
+        .activityType(new GroupActivityType().code("activityCode"))
+        .localDate(LocalDate.now())
+        .tzOffsetMins(0);
     groupWithNoTimeRows.getTags()
         .forEach(tag -> tag.setPath(RuntimeConfig.getString(SqlPostTimeConnectorConfigKey.TAG_UPSERT_PATH).get()));
+    when(postTimeDaoMock.findUserId(any()))
+        .thenReturn(Optional.of(Faker.instance().numerify("userId_######")));
+
+    when(postTimeDaoMock.doesActivityCodeExist(any()))
+        .thenReturn(true);
+
+    String matterId = groupWithNoTimeRows.getTags().get(0).getExternalId();
+    when(postTimeDaoMock.findMatterIdByExternalId(any()))
+        .thenReturn(Optional.of(matterId));
+
 
     assertThat(connector.postTime(groupWithNoTimeRows).getStatus())
-        .isEqualTo(PostResultStatus.PERMANENT_FAILURE);
+        .isEqualTo(PostResultStatus.SUCCESS);
 
-    verify(postTimeDaoMock, never()).createWorklog(any(Worklog.class));
+    verify(postTimeDaoMock, times(3)).createWorklog(any(Worklog.class));
   }
 
   @Test
