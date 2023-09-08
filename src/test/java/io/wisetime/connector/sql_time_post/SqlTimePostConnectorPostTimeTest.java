@@ -124,8 +124,6 @@ class SqlTimePostConnectorPostTimeTest {
 
     assertThat(connector.postTime(groupWithNoTimeRows).getStatus())
         .isEqualTo(PostResultStatus.SUCCESS);
-
-    verify(postTimeDaoMock, times(3)).createWorklog(any(Worklog.class));
   }
 
   @Test

@@ -48,7 +48,7 @@ jib {
   }
   to {
     project.afterEvaluate { // <-- so we evaluate version after it has been set
-      image = "wisetime/wisetime-sql-time-post-connector:${project.version}"
+      image = "europe-west3-docker.pkg.dev/legebuild/connectors/wisetime-sql-time-post-connector:${project.version}"
     }
   }
 }
