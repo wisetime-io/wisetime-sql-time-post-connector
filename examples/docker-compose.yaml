@@ -1,0 +1,68 @@
+# Copyright (c) 2019 Practice Insight Pty Ltd. All rights reserved.
+#
+# Docker Compose manifest for running WiseTime SQL Post Time Connector.
+#
+# To start the WiseTime Connector, run the following command in the same directory as
+# this docker-compose.yaml file:
+#
+#   docker-compose -p wisetime-sql-post-time-connector up -d
+#
+# To stop the WiseTime Connector, run the following command in the same directory:
+#
+#   docker-compose down
+#
+# This docker-compose.yaml file creates a local volume for persistence. To list the
+# volume:
+#
+#   docker volume ls
+#
+version: "3"
+services:
+  wisetime-sql-post-time-connector:
+    labels:
+      description: WiseTime SQL Time Post Connector
+    image: wisetime/wisetime-sql-time-post-connector:latest
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+
+    # uncomment the ports: definition if the connector should work in webhook mode.
+    # ports:
+    #   - "8080:8080"
+
+    environment:
+      API_KEY: YOUR_WISETIME_CONNECT_API_KEY
+
+      # Set loglevel if other than default - INFO - required
+      # LOGLEVEL: DEBUG
+
+      # Required Parameter needs to be set to same value as associated tag sync connector
+      TAG_UPSERT_PATH: /Inprotech/
+
+      # uncomment the following - as well as the above docker ports: definition - if the connector
+      # should work in webhook mode. If the connector should work using other than the default
+      # port, please adapt the docker ports: definition in line with the WEBHOOK_PORT variable.
+      # RECEIVE_POSTED_TIME: WEBHOOK
+      # CALLER_KEY: PICK_A_SECRET
+      # WEBHOOK_PORT: 8080
+
+      JDBC_URL: "jdbc:sqlserver://HOST:PORT;databaseName=DATABASE_NAME;ssl=request;useCursors=true"
+      DB_USER: USERNAME
+      DB_PASSWORD: PASSWORD
+
+      # Local cache for keeping track of matters that have been synced
+      DATA_DIR: /usr/local/wisetime-connector/data/
+
+      TIME_POST_SQL_PATH: /etc/wisetime-connector/time_post_sql.yaml
+      NARRATIVE_PATH: /etc/wisetime-connector/timegroup-narrative-template.ftl
+      NARRATIVE_INTERNAL_PATH: /etc/wisetime-connector/timegroup-narrative-internal-template.ftl
+
+    volumes:
+      - data:/usr/local/wisetime-connector/data/
+      # Read config files from same directory as this docker-compose.yaml file
+      - $PWD:/etc/wisetime-connector/
+volumes:
+  data:
+    driver: local
