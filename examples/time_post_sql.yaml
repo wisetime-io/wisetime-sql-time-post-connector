@@ -1,0 +1,23 @@
+canQueryDbSql: >
+  SELECT TOP(1) 1 FROM CASES;
+createWorklogSql: >
+  INSERT INTO dbo.wt_post_time
+  (CASEID ,USERNAME, EMAIL, ACTIVITY_CODE, NARRATIVE, NARRATIVE_INTERNAL_NOTE, START_TIME, TOTAL_TIME_SECS, CHARGEABLE_TIME_SECS)
+  VALUES
+  (cast (:matterId as int), (SELECT Username FROM V_rcw_ListEmployee WHERE ID = :userId), (SELECT Email FROM V_rcw_ListEmployee WHERE ID = :userId),
+  cast (:activityCode as int), :narrative, :narrativeInternal, :startTime, :durationSecs, :chargeableTimeSecs);
+doesActivityCodeExistSql: >
+  select ACTIVITYCODE
+  FROM V_rcw_ListHoursActivity
+  WHERE ACTIVITYCODE = cast (:activityCode as int);
+findMatterIdByTagNameSql: >
+  SELECT caseid
+  FROM cases c WHERE c.irn = :tagName;
+findMatterIdByExternalIdSql: >
+  SELECT caseid
+  FROM cases c WHERE c.caseid = :externalId;
+findUserIdSql: >
+  SELECT ID
+  FROM V_rcw_ListEmployee
+  WHERE username = :emailOrExternalId
+  OR email = :emailOrExternalId;
