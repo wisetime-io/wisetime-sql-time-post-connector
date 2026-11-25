@@ -1,0 +1,13 @@
+name: Update Gradle Wrapper
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 21 * * *"
+
+jobs:
+  update-gradle-wrapper:
+    runs-on: self-hosted
+
+    steps:
+      - uses: wisetime-io/github-actions/actions/gradle-update@master
